@@ -1,10 +1,10 @@
 describe('AutocompleteEditor', () => {
-  const id = 'testContainer';
   const choices = ['yellow', 'red', 'orange', 'green', 'blue', 'gray', 'black',
     'white', 'purple', 'lime', 'olive', 'cyan'];
 
   beforeEach(function() {
-    this.$container = $(`<div id="${id}" style="width: 300px; height: 200px; overflow: auto"></div>`).appendTo('body');
+    this.$container = $('<div id="testContainer" style="width: 300px; height: 200px; overflow: auto"></div>')
+      .appendTo('body');
   });
 
   afterEach(function() {
@@ -50,7 +50,7 @@ describe('AutocompleteEditor', () => {
 
     const editor = $(getActiveEditor().TEXTAREA_PARENT);
 
-    keyDownUp('enter');
+    keyDownUp('F2');
 
     expect(editor.offset()).toEqual($(getCell(0, 0)).offset());
   });
@@ -371,29 +371,98 @@ describe('AutocompleteEditor', () => {
       window.onerror = prevError;
     });
 
-    it('should open editor with the proper width of the autocomplete list', async() => {
+    it('should open editor with the correct size when there is no scrollbar on the list', async() => {
       handsontable({
-        colWidths: 50,
+        colWidths: 120,
         columns: [
           {
             editor: 'autocomplete',
-            source: choices,
-            visibleRows: 2,
+            source: choices.slice(0, 5),
+            visibleRows: 5,
           }
         ]
       });
-      const scrollbarWidth = Handsontable.dom.getScrollbarWidth();
-      const expectedWidth = 50 + (scrollbarWidth === 0 ? 15 : scrollbarWidth);
 
       selectCell(0, 0);
-
-      const editor = $('.autocompleteEditor');
-
       keyDownUp('enter');
 
       await sleep(100);
 
-      expect(editor.find('.ht_master .wtHolder').width()).toBe(expectedWidth);
+      const container = getActiveEditor().htContainer;
+
+      expect(container.clientWidth).toBe(120);
+      expect(container.clientHeight).toBe(118);
+    });
+
+    it('should open editor with the correct size when there is no scrollbar on the list (trimDropdown: false)', async() => {
+      handsontable({
+        colWidths: 120,
+        columns: [
+          {
+            editor: 'autocomplete',
+            source: choices.slice(0, 5),
+            visibleRows: 5,
+            trimDropdown: false,
+          }
+        ]
+      });
+
+      selectCell(0, 0);
+      keyDownUp('enter');
+
+      await sleep(100);
+
+      const container = getActiveEditor().htContainer;
+
+      expect(container.clientWidth).toBe(52);
+      expect(container.clientHeight).toBe(118);
+    });
+
+    it('should open editor with the correct size when there is scrollbar on the list', async() => {
+      handsontable({
+        colWidths: 120,
+        columns: [
+          {
+            editor: 'autocomplete',
+            source: choices,
+            visibleRows: 3,
+          }
+        ]
+      });
+
+      selectCell(0, 0);
+      keyDownUp('enter');
+
+      await sleep(100);
+
+      const container = getActiveEditor().htContainer;
+
+      expect(container.clientWidth).toBe(120 + Handsontable.dom.getScrollbarWidth());
+      expect(container.clientHeight).toBe(72);
+    });
+
+    it('should open editor with the correct size when there is scrollbar on the list (trimDropdown: false)', async() => {
+      handsontable({
+        colWidths: 120,
+        columns: [
+          {
+            editor: 'autocomplete',
+            source: choices,
+            visibleRows: 3,
+            trimDropdown: false,
+          }
+        ]
+      });
+
+      selectCell(0, 0);
+      keyDownUp('enter');
+
+      await sleep(100);
+
+      const container = getActiveEditor().htContainer;
+
+      expect(container.clientWidth).toBe(52 + Handsontable.dom.getScrollbarWidth());
+      expect(container.clientHeight).toBe(72);
     });
   });
 
@@ -665,6 +734,41 @@ describe('AutocompleteEditor', () => {
       expect(editor.find('.autocompleteEditor .htCore td').width())
         .toEqual(editor.find('.handsontableInput').width() - 2);
       expect(editor.find('.autocompleteEditor .htCore td').width()).toBeGreaterThan(187);
+    });
+
+    it('should display the autocomplete list with correct dimensions, after updating the choice list from no match' +
+    'to a match', async() => {
+      handsontable({
+        columns: [
+          {
+            type: 'autocomplete',
+            trimDropdown: false,
+            source: choices
+          }
+        ]
+      });
+
+      selectCell(0, 0);
+      keyDownUp('enter');
+
+      const autocompleteEditor = $('.autocompleteEditor');
+      const inputHolder = $('.handsontableInputHolder');
+
+      await sleep(50);
+
+      autocompleteEditor.siblings('textarea').first().val('ab');
+      keyDownUp('a');
+      keyDownUp('b');
+      await sleep(50);
+
+      autocompleteEditor.siblings('textarea').first().val('a');
+      keyDownUp('backspace');
+      await sleep(50);
+
+      expect(
+        inputHolder.find('.autocompleteEditor .ht_master').eq(0).width()
+      ).toBeGreaterThan(inputHolder.find('.handsontableInput').width());
+
     });
 
     it('autocomplete list should have the suggestion table dimensions, when trimDropdown option is set to false', async() => {
@@ -2754,8 +2858,8 @@ describe('AutocompleteEditor', () => {
     expect(getDataAtCell(0, 0)).toEqual('2');
   });
 
-  // Input element should be focused on cell selection othrwise it breaks IME editor functionality for Asian users.
-  it('should not lose the focus on input element while inserting new characters (#839)', async() => {
+  // Input element should be focused on cell selection otherwise it breaks IME editor functionality for Asian users.
+  it('should not lose the focus on input element while inserting new characters when `imeFastEditing` is enabled  (#839)', async() => {
     const hot = handsontable({
       data: [
         ['one', 'two'],
@@ -2768,9 +2872,13 @@ describe('AutocompleteEditor', () => {
         },
         {},
       ],
+      imeFastEdit: true,
     });
 
     selectCell(0, 0);
+
+    // The `imeFastEdit` timeout is set to 50ms.
+    await sleep(55);
 
     const activeElement = hot.getActiveEditor().TEXTAREA;
 
@@ -2779,6 +2887,27 @@ describe('AutocompleteEditor', () => {
     expect(document.activeElement).toBe(activeElement);
 
     await sleep(50);
+
+    keyDownUp('enter');
+
+    expect(document.activeElement).toBe(activeElement);
+
+    await sleep(200);
+
+    expect(document.activeElement).toBe(activeElement);
+
+    hot.getActiveEditor().TEXTAREA.value = 't';
+    keyDownUp('t');
+
+    expect(document.activeElement).toBe(activeElement);
+
+    hot.getActiveEditor().TEXTAREA.value = 'te';
+    keyDownUp('e');
+
+    expect(document.activeElement).toBe(activeElement);
+
+    hot.getActiveEditor().TEXTAREA.value = 'teo';
+    keyDownUp('o');
 
     expect(document.activeElement).toBe(activeElement);
   });
@@ -3477,18 +3606,22 @@ describe('AutocompleteEditor', () => {
   });
 
   describe('IME support', () => {
-    it('should focus editable element after selecting the cell', async() => {
+    it('should focus the editable element after a timeout when selecting the cell if `imeFastEdit` is' +
+      ' enabled', async() => {
       handsontable({
         columns: [
           {
             editor: 'autocomplete',
             source: choices
           }
-        ]
+        ],
+        imeFastEdit: true,
       });
+
       selectCell(0, 0, 0, 0, true, false);
 
-      await sleep(10);
+      // The `imeFastEdit` timeout is set to 50ms.
+      await sleep(55);
 
       expect(document.activeElement).toBe(getActiveEditor().TEXTAREA);
     });

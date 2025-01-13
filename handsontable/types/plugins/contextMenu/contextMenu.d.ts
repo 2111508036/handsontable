@@ -21,7 +21,7 @@ export interface Selection {
 }
 
 export interface MenuConfig {
-  [key: string]: MenuItemConfig;
+  [key: string]: MenuItemConfig | PredefinedMenuItemKey;
 }
 
 export interface MenuItemConfig {
@@ -49,7 +49,8 @@ export interface SubmenuItemConfig extends Omit<MenuItemConfig, "key"> {
 
 export interface DetailedSettings {
   callback?: (key: string, selection: Selection[], clickEvent: MouseEvent) => void;
-  items: PredefinedMenuItemKey[] | MenuConfig;
+  uiContainer?: HTMLElement,
+  items?: PredefinedMenuItemKey[] | MenuConfig;
 }
 
 export type Settings = boolean | PredefinedMenuItemKey[] | DetailedSettings;
@@ -60,7 +61,7 @@ export class ContextMenu extends BasePlugin {
 
   constructor(hotInstance: Core);
   isEnabled(): boolean;
-  open(event: Event): void;
+  open(position: { left: number, top: number } | Event, offset?: { above?: number, below?: number, left?: number, right?: number }): void;
   close(): void;
   executeCommand(commandName: string, ...params: any): void;
 }

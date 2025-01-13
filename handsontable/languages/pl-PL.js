@@ -14,9 +14,9 @@ return /******/ (() => { // webpackBootstrap
 /* 1 */
 /***/ ((module) => {
 
-function _interopRequireDefault(obj) {
-  return obj && obj.__esModule ? obj : {
-    "default": obj
+function _interopRequireDefault(e) {
+  return e && e.__esModule ? e : {
+    "default": e
   };
 }
 module.exports = _interopRequireDefault, module.exports.__esModule = true, module.exports["default"] = module.exports;
@@ -57,7 +57,7 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__2__;
 /******/ 	
 /************************************************************************/
 var __webpack_exports__ = {};
-// This entry need to be wrapped in an IIFE because it need to be in strict mode.
+// This entry needs to be wrapped in an IIFE because it needs to be in strict mode.
 (() => {
 "use strict";
 var exports = __webpack_exports__;
@@ -152,11 +152,12 @@ const dictionary = {
   [C.FILTERS_BUTTONS_CANCEL]: 'Anuluj',
   [C.FILTERS_BUTTONS_PLACEHOLDER_SEARCH]: 'Szukaj',
   [C.FILTERS_BUTTONS_PLACEHOLDER_VALUE]: 'Wartość',
-  [C.FILTERS_BUTTONS_PLACEHOLDER_SECOND_VALUE]: 'Druga wartość'
+  [C.FILTERS_BUTTONS_PLACEHOLDER_SECOND_VALUE]: 'Druga wartość',
+  [C.CHECKBOX_CHECKED]: 'Zaznaczony',
+  [C.CHECKBOX_UNCHECKED]: 'Odznaczony'
 };
 _handsontable.default.languages.registerLanguageDictionary(dictionary);
-var _default = dictionary;
-exports["default"] = _default;
+var _default = exports["default"] = dictionary;
 })();
 
 __webpack_exports__ = __webpack_exports__.___;

@@ -1,22 +1,10 @@
 import { instanceToHTML, _dataToHTML, htmlToGridSettings } from '../parseTable';
 import Handsontable from '../../index';
 import { registerCellType, TextCellType } from '../../cellTypes';
-import { IntersectionObserverMock } from '../../../test/__mocks__/intersectionObserverMock';
-import { ResizeObserverMock } from '../../../test/__mocks__/resizeObserverMock';
 
 registerCellType(TextCellType);
 
 describe('instanceToHTML', () => {
-  beforeAll(() => {
-    window.IntersectionObserver = IntersectionObserverMock;
-    window.ResizeObserver = ResizeObserverMock;
-  });
-
-  afterAll(() => {
-    delete window.IntersectionObserver;
-    delete window.ResizeObserver;
-  });
-
   it('should convert clear instance into HTML table', () => {
     const hot = new Handsontable(document.createElement('div'), {});
 
@@ -302,6 +290,75 @@ describe('htmlToGridSettings', () => {
     expect(config.mergeCells[1].row).toBe(3);
     expect(config.mergeCells[1].colspan).toBe(1);
     expect(config.mergeCells[1].rowspan).toBe(4);
+  });
+
+  it('should parse table with long text properly', () => {
+    /* eslint-disable no-irregular-whitespace */
+    const htmlToParse = `
+      <table>
+       <tr>
+        <td>
+        <p><span>Some very long text with no line breaks inside table
+        cell. Some very long text with no line breaks</span></p>
+        <p><span>&nbsp;</span></p>
+        <p><span>&nbsp;</span></p>
+        <p><span>ins table cell. Some very long text with no line breaks
+        inside table cell. Some very long text with no line breaks inside table cell.
+        Some very long text with no line breaks inside table cell. Some very long
+        text with no line breaks inside table cell. Some very long text with no line
+        breaks inside table cell. Some very long text with no line breaks inside
+        table cell. Some very long text with no line breaks inside table cell. Some
+        very long text with no line breaks inside table cell. Some very long text
+        with no line breaks inside table cell. Some very long text with no line
+        breaks inside table cell. Some very long text with no line breaks inside
+        table cell. Some very long text with no line breaks inside table cell. Some
+        very long text with no line breaks inside table cell. Some very long text
+        with no line breaks inside table cell. Some very long text with no line
+        breaks inside table cell. Some very long text with no line breaks inside
+        table cell. Some very long text with no line breaks inside table cell. Some
+        very long text with no line breaks inside table cell. Some very long text
+        with no line breaks inside table cell. Some very long text with no line
+        breaks inside table cell. Some very long text with no line breaks inside
+        table cell. Some very long text with no line breaks inside table cell.</span></p>
+        </td>
+       </tr>
+       <tr>
+        <td>
+        <p><span>Another very long text with no line breaks inside table
+        cell. <span>       </span>Some very long text with
+        no line breaks <span>     </span>o line breo line
+        breo line breo line breo line bre</span></p>
+        <p><span>&nbsp;</span></p>
+        <p><span>NEW LINE</span></p>
+        </td>
+       </tr>
+      </table>`;
+    /* eslint-enable */
+
+    const config = htmlToGridSettings(htmlToParse);
+
+    expect(config.data).toEqual([[
+      'Some very long text with no line breaks inside table cell. Some very long text with no line breaks' +
+      '\n\n\n' +
+      'ins table cell. Some very long text with no line breaks inside table cell. Some very long text with no line ' +
+      'breaks inside table cell. Some very long text with no line breaks inside table cell. Some very long text with ' +
+      'no line breaks inside table cell. Some very long text with no line breaks inside table cell. Some very long ' +
+      'text with no line breaks inside table cell. Some very long text with no line breaks inside table cell. Some ' +
+      'very long text with no line breaks inside table cell. Some very long text with no line breaks inside table ' +
+      'cell. Some very long text with no line breaks inside table cell. Some very long text with no line breaks ' +
+      'inside table cell. Some very long text with no line breaks inside table cell. Some very long text with no ' +
+      'line breaks inside table cell. Some very long text with no line breaks inside table cell. Some very long ' +
+      'text with no line breaks inside table cell. Some very long text with no line breaks inside table cell. Some ' +
+      'very long text with no line breaks inside table cell. Some very long text with no line breaks inside table ' +
+      'cell. Some very long text with no line breaks inside table cell. Some very long text with no line breaks ' +
+      'inside table cell. Some very long text with no line breaks inside table cell. Some very long text with no ' +
+      'line breaks inside table cell.'
+    ], [
+      'Another very long text with no line breaks inside table cell.        Some very long text with no line ' +
+      'breaks      o line breo line breo line breo line breo line bre' +
+      '\n\n' +
+      'NEW LINE'
+    ]]);
   });
 
   describe('nestedHeaders', () => {

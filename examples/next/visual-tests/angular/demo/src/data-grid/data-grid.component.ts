@@ -1,24 +1,26 @@
-import { Component, ViewEncapsulation } from "@angular/core";
+import { Component, ViewEncapsulation, CUSTOM_ELEMENTS_SCHEMA } from "@angular/core";
+import { HotTableModule } from '@handsontable/angular';
 import { getData } from "./utils/constants";
 import { starsRenderer } from "./renderers/stars";
 import { progressBarRenderer } from "./renderers/progressBar";
 
 import {
-  alignHeaders,
   drawCheckboxInRowHeaders,
   addClassesToRows,
   changeCheckboxCell
 } from "./utils/hooks-callbacks";
 
 @Component({
+  standalone: true,
   encapsulation: ViewEncapsulation.None,
   selector: "data-grid",
   templateUrl: "./data-grid.component.html",
-  styleUrls: ["./data-grid.scss"]
+  styleUrls: ["./data-grid.scss"],
+  imports: [HotTableModule],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class DataGridComponent {
   dataset = getData();
-  alignHeaders = alignHeaders;
   drawCheckboxInRowHeaders = drawCheckboxInRowHeaders;
   addClassesToRows = addClassesToRows;
   changeCheckboxCell = changeCheckboxCell;
@@ -38,5 +40,6 @@ export class DataGridComponent {
   hiddenColumns = {
     indicators: true
   };
+  headerClassNameValue = document.documentElement.getAttribute('dir') === 'rtl' ? 'htRight' : 'htLeft';
   licenseKey = "non-commercial-and-evaluation";
 }

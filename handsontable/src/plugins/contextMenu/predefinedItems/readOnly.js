@@ -10,6 +10,20 @@ export const KEY = 'make_read_only';
 export default function readOnlyItem() {
   return {
     key: KEY,
+    checkable: true,
+    ariaChecked() {
+      const atLeastOneReadOnly = checkSelectionConsistency(
+        this.getSelectedRange(),
+        (row, col) => this.getCellMeta(row, col).readOnly
+      );
+
+      return atLeastOneReadOnly;
+    },
+
+    ariaLabel() {
+      return this.getTranslatedPhrase(C.CONTEXTMENU_ITEMS_READ_ONLY);
+    },
+
     name() {
       let label = this.getTranslatedPhrase(C.CONTEXTMENU_ITEMS_READ_ONLY);
       const atLeastOneReadOnly = checkSelectionConsistency(
@@ -41,6 +55,16 @@ export default function readOnlyItem() {
       this.render();
     },
     disabled() {
+      const range = this.getSelectedRangeLast();
+
+      if (!range) {
+        return true;
+      }
+
+      if (range.isSingleHeader()) {
+        return true;
+      }
+
       if (this.selection.isSelectedByCorner()) {
         return true;
       }

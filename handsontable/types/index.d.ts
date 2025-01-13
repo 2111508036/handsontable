@@ -24,6 +24,7 @@ import {
   HandsontableCellType,
   NumericCellType,
   PasswordCellType,
+  SelectCellType,
   TextCellType,
   TimeCellType,
   getCellType,
@@ -48,11 +49,15 @@ import {
 import {
   RendererType,
   autocompleteRenderer,
+  dropdownRenderer,
+  dateRenderer,
   baseRenderer,
   checkboxRenderer,
   htmlRenderer,
+  handsontableRenderer,
   numericRenderer,
   passwordRenderer,
+  selectRenderer,
   textRenderer,
   timeRenderer,
   getRenderer,
@@ -61,6 +66,7 @@ import {
 import {
   ValidatorType,
   autocompleteValidator,
+  dropdownValidator,
   dateValidator,
   numericValidator,
   timeValidator ,
@@ -72,7 +78,7 @@ import * as dom from './helpers/dom';
 import CellCoords from './3rdparty/walkontable/src/cell/coords';
 import CellRange from './3rdparty/walkontable/src/cell/range';
 import EventManager from './eventManager';
-import { Hooks } from './pluginHooks';
+import { Hooks, Events } from './core/hooks';
 // plugins
 import {
   AutoColumnSize as _AutoColumnSize,
@@ -215,6 +221,9 @@ import {
   SearchQueryMethod,
 } from './plugins/search';
 import {
+  Settings as StretchColumnsSettings,
+} from './plugins/stretchColumns';
+import {
   TouchScroll as _TouchScroll,
   Settings as TouchScrollSettings,
 } from './plugins/touchScroll';
@@ -292,6 +301,7 @@ declare namespace Handsontable {
     export { NumericCellType as numeric };
     export { PasswordCellType as password };
     export { TextCellType as text };
+    export { SelectCellType as select };
     export { TimeCellType as time };
     export { registerCellType };
     export { getCellType };
@@ -315,13 +325,17 @@ declare namespace Handsontable {
 
   export namespace renderers {
     export { autocompleteRenderer as AutocompleteRenderer };
+    export { dropdownRenderer as DropdownRenderer };
     export { baseRenderer as cellDecorator };
     export { baseRenderer as BaseRenderer };
     export { checkboxRenderer as CheckboxRenderer };
     export { htmlRenderer as HtmlRenderer };
+    export { handsontableRenderer as HandsontableRenderer };
     export { numericRenderer as NumericRenderer };
     export { passwordRenderer as PasswordRenderer };
     export { textRenderer as TextRenderer };
+    export { dateRenderer as DateRenderer };
+    export { selectRenderer as SelectRenderer };
     export { timeRenderer as TimeRenderer };
     export { registerRenderer };
     export { getRenderer };
@@ -329,6 +343,7 @@ declare namespace Handsontable {
 
   export namespace validators {
     export { autocompleteValidator as AutocompleteValidator };
+    export { dropdownValidator as DropdownValidator };
     export { dateValidator as DateValidator };
     export { numericValidator as NumericValidator };
     export { timeValidator as TimeValidator };
@@ -349,6 +364,7 @@ declare namespace Handsontable {
     export class CopyPaste extends _CopyPaste {}
     export class CustomBorders extends _CustomBorders {}
     export class DragToScroll extends _DragToScroll {}
+    export class DropdownMenu extends _DropdownMenu {}
     export class ExportFile extends _ExportFile {}
     export class Filters extends _Filters {}
     export class Formulas extends _Formulas {}
@@ -366,6 +382,7 @@ declare namespace Handsontable {
     export class NestedRows extends _NestedRows {}
     export class PersistentState extends _PersistentState {}
     export class Search extends _Search {}
+    export class TouchScroll extends _TouchScroll {}
     export class TrimRows extends _TrimRows {}
     export class UndoRedo extends _UndoRedo {}
 
@@ -427,6 +444,10 @@ declare namespace Handsontable {
 
     export namespace DragToScroll {
       export { DragToScrollSettings as Settings };
+    }
+
+    export namespace DropdownMenu {
+      export { DropdownMenuSettings as Settings };
     }
 
     export namespace ExportFile {
@@ -505,6 +526,14 @@ declare namespace Handsontable {
       export { SearchQueryMethod };
     }
 
+    export namespace StretchColumns {
+      export { StretchColumnsSettings as Settings };
+    }
+
+    export namespace TouchScroll {
+      export { TouchScrollSettings as Settings };
+    }
+
     export namespace TrimRows {
       export { TrimRowsSettings as Settings };
     }
@@ -525,5 +554,6 @@ declare class Handsontable extends Core {
 export {
   CellCoords,
   CellRange,
+  Events,
 };
 export default Handsontable;

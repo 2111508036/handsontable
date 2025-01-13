@@ -14,7 +14,7 @@ describe('Core.batch', () => {
 
   it('should batch multi-line operations into one render and execution call', async() => {
     const hot = handsontable({
-      data: Handsontable.helper.createSpreadsheetData(5, 5),
+      data: createSpreadsheetData(5, 5),
       autoColumnSize: false,
       autoRowSize: false,
     });
@@ -58,7 +58,7 @@ describe('Core.batch', () => {
     expect(hot.resumeExecution).toHaveBeenCalledBefore(hot.resumeRender);
     expect(hot.resumeRender).toHaveBeenCalledOnceWith();
     expect(hot.view._wt.draw).toHaveBeenCalledOnceWith(false); // fast redraw?
-    expect(hot.view._wt.wtOverlays.adjustElementsSize).toHaveBeenCalledOnceWith(true);
+    expect(hot.view._wt.wtOverlays.adjustElementsSize).toHaveBeenCalledTimes(1);
     expect(columnIndexCacheUpdated).toHaveBeenCalledTimes(3);
 
     expect(columnIndexCacheUpdated).toHaveBeenCalledWith({
@@ -76,7 +76,7 @@ describe('Core.batch', () => {
 
   it('should batch showing/hiding headers correctly', () => {
     const hot = handsontable({
-      data: Handsontable.helper.createSpreadsheetData(5, 5),
+      data: createSpreadsheetData(5, 5),
       colHeaders: false,
       rowHeaders: false,
     });
@@ -109,18 +109,17 @@ describe('Core.batch', () => {
       });
     });
 
-    // The top header disappears by setting the width to 0, the height is not touched
     expect(getTopClone().width()).toBe(0);
-    expect(getTopClone().height()).toBe(26);
+    expect(getTopClone().height()).toBe(0);
     expect(getTopInlineStartClone().width()).toBe(0);
     expect(getTopInlineStartClone().height()).toBe(0);
     expect(getInlineStartClone().width()).toBe(0);
-    expect(getInlineStartClone().height()).toBe(142);
+    expect(getInlineStartClone().height()).toBe(0);
   });
 
   it('should batch adjusting fixed headers correctly', () => {
     const hot = handsontable({
-      data: Handsontable.helper.createSpreadsheetData(5, 5),
+      data: createSpreadsheetData(5, 5),
       fixedRowsTop: 0,
       fixedColumnsStart: 0,
       fixedRowsBottom: 0,
@@ -164,17 +163,15 @@ describe('Core.batch', () => {
       });
     });
 
-    // The top header disappears by setting the width to 0, the height is not touched
     expect(getTopClone().width()).toBe(0);
-    expect(getTopClone().height()).toBe(24);
+    expect(getTopClone().height()).toBe(0);
     expect(getTopInlineStartClone().width()).toBe(0);
     expect(getTopInlineStartClone().height()).toBe(0);
     expect(getInlineStartClone().width()).toBe(0);
-    expect(getInlineStartClone().height()).toBe(116);
+    expect(getInlineStartClone().height()).toBe(0);
     expect(getBottomInlineStartClone().width()).toBe(0);
     expect(getBottomInlineStartClone().height()).toBe(0);
-    // The bottom header disappears by setting the width to 0, the height is not touched
     expect(getBottomClone().width()).toBe(0);
-    expect(getBottomClone().height()).toBe(24);
+    expect(getBottomClone().height()).toBe(0);
   });
 });

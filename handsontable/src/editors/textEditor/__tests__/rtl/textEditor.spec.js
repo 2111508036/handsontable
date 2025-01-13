@@ -70,7 +70,7 @@ describe('TextEditor (RTL mode)', () => {
 
       const editor = $(getActiveEditor().TEXTAREA_PARENT);
 
-      keyDown('enter');
+      keyDown('F2');
 
       expect(editor.offset()).toEqual($(getCell(0, 0)).offset());
     });
@@ -329,7 +329,7 @@ describe('TextEditor (RTL mode)', () => {
     });
 
     it('should hide editor when quick navigation by click scrollbar was triggered', async() => {
-      const hot = handsontable({
+      handsontable({
         layoutDirection,
         data: Handsontable.helper.createSpreadsheetData(50, 50),
         rowHeaders: true,
@@ -341,14 +341,14 @@ describe('TextEditor (RTL mode)', () => {
 
       keyDown('enter');
       keyUp('enter');
-      hot.scrollViewportTo(49);
+      scrollViewportTo({ row: 49 });
 
       await sleep(100);
 
       expect(isEditorVisible()).toBe(false);
     });
 
-    it('should scroll editor to a cell, if trying to edit cell that is outside of the viewport', () => {
+    it('should scroll editor to a cell, if trying to edit cell that is outside of the viewport', async() => {
       const hot = handsontable({
         layoutDirection,
         data: Handsontable.helper.createSpreadsheetData(20, 20),
@@ -368,6 +368,7 @@ describe('TextEditor (RTL mode)', () => {
       expect(getCell(19, 19)).not.toBeNull();
 
       keyDown('enter');
+      await sleep(50);
 
       expect(getCell(0, 0)).not.toBeNull();
       expect(getCell(19, 19)).toBeNull();

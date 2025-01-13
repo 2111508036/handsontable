@@ -6,6 +6,10 @@ describe('Walkontable.Renderer.RowsRenderer', () => {
     renderedRowToSource(visibleRowIndex) {
       return visibleRowIndex;
     }
+
+    isAriaEnabled() {
+      return true;
+    }
   }
 
   function createRenderer() {
@@ -66,6 +70,31 @@ describe('Walkontable.Renderer.RowsRenderer', () => {
     expect(rootNode.outerHTML).toMatchHTML(`
       <tbody>
         <tr></tr>
+      </tbody>
+      `);
+  });
+
+  it('should add the `ht__rows_odd` and `ht__rows_even` classes to the appropriate rows', () => {
+    const { renderer, tableMock, rootNode } = createRenderer();
+
+    spec().matchersConfig = {
+      toMatchHTML: {
+        keepAttributes: ['class']
+      }
+    };
+
+    tableMock.rowsToRender = 5;
+
+    renderer.adjust();
+    renderer.render();
+
+    expect(rootNode.outerHTML).toMatchHTML(`
+      <tbody>
+        <tr class="ht__row_odd"></tr>
+        <tr class="ht__row_even"></tr>
+        <tr class="ht__row_odd"></tr>
+        <tr class="ht__row_even"></tr>
+        <tr class="ht__row_odd"></tr>
       </tbody>
       `);
   });

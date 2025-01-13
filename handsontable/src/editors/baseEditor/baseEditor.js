@@ -1,6 +1,5 @@
-import { isDefined, stringify } from '../../helpers/mixed';
+import { stringify } from '../../helpers/mixed';
 import { mixin } from '../../helpers/object';
-import { SHORTCUTS_GROUP_NAVIGATION } from '../../editorManager';
 import hooksRefRegisterer from '../../mixins/hooksRefRegisterer';
 import {
   getScrollbarWidth,
@@ -9,7 +8,6 @@ import {
   hasHorizontalScrollbar,
   outerWidth,
   outerHeight,
-  getComputedStyle,
 } from '../../helpers/dom/element';
 
 export const EDITOR_TYPE = 'base';
@@ -20,8 +18,6 @@ export const EDITOR_STATE = Object.freeze({
   FINISHED: 'STATE_FINISHED'
 });
 
-export const SHORTCUTS_GROUP_EDITOR = 'baseEditor';
-
 /**
  * @class BaseEditor
  */
@@ -31,88 +27,81 @@ export class BaseEditor {
   }
 
   /**
-   * @param {Handsontable} instance A reference to the source instance of the Handsontable.
+   * A reference to the source instance of the Handsontable.
+   *
+   * @type {Handsontable}
    */
-  constructor(instance) {
-    /**
-     * A reference to the source instance of the Handsontable.
-     *
-     * @type {Handsontable}
-     */
-    this.hot = instance;
-    /**
-     * A reference to the source instance of the Handsontable.
-     *
-     * @deprecated
-     *
-     * @type {Handsontable}
-     */
-    this.instance = instance;
-    /**
-     * Editor's state.
-     *
-     * @type {string}
-     */
-    this.state = EDITOR_STATE.VIRGIN;
-    /**
-     * Flag to store information about editor's opening status.
-     *
-     * @private
-     *
-     * @type {boolean}
-     */
-    this._opened = false;
-    /**
-     * Defines the editor's editing mode. When false, then an editor works in fast editing mode.
-     *
-     * @private
-     *
-     * @type {boolean}
-     */
-    this._fullEditMode = false;
-    /**
-     * Callback to call after closing editor.
-     *
-     * @type {Function}
-     */
-    this._closeCallback = null;
-    /**
-     * Currently rendered cell's TD element.
-     *
-     * @type {HTMLTableCellElement}
-     */
-    this.TD = null;
-    /**
-     * Visual row index.
-     *
-     * @type {number}
-     */
-    this.row = null;
-    /**
-     * Visual column index.
-     *
-     * @type {number}
-     */
-    this.col = null;
-    /**
-     * Column property name or a column index, if datasource is an array of arrays.
-     *
-     * @type {number|string}
-     */
-    this.prop = null;
-    /**
-     * Original cell's value.
-     *
-     * @type {*}
-     */
-    this.originalValue = null;
-    /**
-     * Object containing the cell's properties.
-     *
-     * @type {object}
-     */
-    this.cellProperties = null;
+  hot;
+  /**
+   * Editor's state.
+   *
+   * @type {string}
+   */
+  state = EDITOR_STATE.VIRGIN;
+  /**
+   * Flag to store information about editor's opening status.
+   *
+   * @private
+   *
+   * @type {boolean}
+   */
+  _opened = false;
+  /**
+   * Defines the editor's editing mode. When false, then an editor works in fast editing mode.
+   *
+   * @private
+   *
+   * @type {boolean}
+   */
+  _fullEditMode = false;
+  /**
+   * Callback to call after closing editor.
+   *
+   * @type {Function}
+   */
+  _closeCallback = null;
+  /**
+   * Currently rendered cell's TD element.
+   *
+   * @type {HTMLTableCellElement}
+   */
+  TD = null;
+  /**
+   * Visual row index.
+   *
+   * @type {number}
+   */
+  row = null;
+  /**
+   * Visual column index.
+   *
+   * @type {number}
+   */
+  col = null;
+  /**
+   * Column property name or a column index, if datasource is an array of arrays.
+   *
+   * @type {number|string}
+   */
+  prop = null;
+  /**
+   * Original cell's value.
+   *
+   * @type {*}
+   */
+  originalValue = null;
+  /**
+   * Object containing the cell's properties.
+   *
+   * @type {object}
+   */
+  cellProperties = null;
 
+  /**
+   * @param {Handsontable} hotInstance A reference to the source instance of the Handsontable.
+   */
+  constructor(hotInstance) {
+    this.hot = hotInstance;
     this.init();
   }
 
@@ -170,7 +159,7 @@ export class BaseEditor {
    * @param {number|string} prop The column property (passed when datasource is an array of objects).
    * @param {HTMLTableCellElement} td The rendered cell element.
    * @param {*} value The rendered value.
-   * @param {object} cellProperties The cell meta object ({@see Core#getCellMeta}).
+   * @param {object} cellProperties The cell meta object (see {@link Core#getCellMeta}).
    */
   prepare(row, col, prop, td, value, cellProperties) {
     this.TD = td;
@@ -179,7 +168,7 @@ export class BaseEditor {
     this.prop = prop;
     this.originalValue = value;
     this.cellProperties = cellProperties;
-    this.state = EDITOR_STATE.VIRGIN;
+    this.state = this.isOpened() ? this.state : EDITOR_STATE.VIRGIN;
   }
 
   /**
@@ -216,41 +205,11 @@ export class BaseEditor {
       [visualRowFrom, visualColumnFrom, visualRowTo, visualColumnTo] = [this.row, this.col, null, null];
     }
 
-    const modifiedCellCoords = this.hot.runHooks('modifyGetCellCoords', visualRowFrom, visualColumnFrom);
+    const modifiedCellCoords = this.hot
+      .runHooks('modifyGetCellCoords', visualRowFrom, visualColumnFrom, false, 'meta');
 
     if (Array.isArray(modifiedCellCoords)) {
       [visualRowFrom, visualColumnFrom] = modifiedCellCoords;
-    }
-
-    const shortcutManager = this.hot.getShortcutManager();
-    const editorContext = shortcutManager.getContext('editor');
-    const contextConfig = {
-      runOnlyIf: () => isDefined(this.hot.getSelected()),
-      group: SHORTCUTS_GROUP_EDITOR,
-    };
-
-    if (this.isInFullEditMode()) {
-      editorContext.addShortcuts([{
-        keys: [['ArrowUp']],
-        callback: () => {
-          this.hot.selection.transformStart(-1, 0);
-        },
-      }, {
-        keys: [['ArrowDown']],
-        callback: () => {
-          this.hot.selection.transformStart(1, 0);
-        },
-      }, {
-        keys: [['ArrowLeft']],
-        callback: () => {
-          this.hot.selection.transformStart(0, -1 * this.hot.getDirectionFactor());
-        },
-      }, {
-        keys: [['ArrowRight']],
-        callback: () => {
-          this.hot.selection.transformStart(0, this.hot.getDirectionFactor());
-        },
-      }], contextConfig);
     }
 
     // Saving values using the modified coordinates.
@@ -274,26 +233,36 @@ export class BaseEditor {
     const renderableRowIndex = hotInstance.rowIndexMapper.getRenderableFromVisualIndex(this.row);
     const renderableColumnIndex = hotInstance.columnIndexMapper.getRenderableFromVisualIndex(this.col);
 
-    hotInstance.view.scrollViewport(hotInstance._createCellCoords(renderableRowIndex, renderableColumnIndex));
-    this.state = EDITOR_STATE.EDITING;
+    const openEditor = () => {
+      this.state = EDITOR_STATE.EDITING;
 
-    // Set the editor value only in the full edit mode. In other mode the focusable element has to be empty,
-    // otherwise IME (editor for Asia users) doesn't work.
-    if (this.isInFullEditMode()) {
-      const stringifiedInitialValue = typeof newInitialValue === 'string' ?
-        newInitialValue : stringify(this.originalValue);
+      // Set the editor value only in the full edit mode. In other mode the focusable element has to be empty,
+      // otherwise IME (editor for Asia users) doesn't work.
+      if (this.isInFullEditMode()) {
+        const stringifiedInitialValue = typeof newInitialValue === 'string' ?
+          newInitialValue : stringify(this.originalValue);
 
-      this.setValue(stringifiedInitialValue);
+        this.setValue(stringifiedInitialValue);
+      }
+
+      this.open(event);
+      this._opened = true;
+      this.focus();
+
+      // only rerender the selections (FillHandle should disappear when beginEditing is triggered)
+      hotInstance.view.render();
+      hotInstance.runHooks('afterBeginEditing', this.row, this.col);
+    };
+
+    this.hot.addHookOnce('afterScroll', openEditor);
+
+    const wasScroll = hotInstance.view
+      .scrollViewport(hotInstance._createCellCoords(renderableRowIndex, renderableColumnIndex));
+
+    if (!wasScroll) {
+      this.hot.removeHook('afterScroll', openEditor);
+      openEditor();
     }
-
-    this.open(event);
-    this._opened = true;
-    this.focus();
-
-    // only rerender the selections (FillHandle should disappear when beginEditing is triggered)
-    hotInstance.view.render();
-
-    hotInstance.runHooks('afterBeginEditing', this.row, this.col);
   }
 
   /**
@@ -322,12 +291,6 @@ export class BaseEditor {
     if (this.isWaiting()) {
       return;
     }
-
-    const shortcutManager = this.hot.getShortcutManager();
-    const editorContext = shortcutManager.getContext('editor');
-
-    editorContext.removeShortcutsByGroup(SHORTCUTS_GROUP_EDITOR);
-    editorContext.removeShortcutsByGroup(SHORTCUTS_GROUP_NAVIGATION);
 
     if (this.state === EDITOR_STATE.VIRGIN) {
       this.hot._registerTimeout(() => {
@@ -564,7 +527,7 @@ export class BaseEditor {
       cellStartOffset += firstColumnOffset - horizontalScrollPosition;
     }
 
-    const cellComputedStyle = getComputedStyle(this.TD, this.hot.rootWindow);
+    const cellComputedStyle = rootWindow.getComputedStyle(this.TD);
     const borderPhysicalWidthProp = this.hot.isRtl() ? 'borderRightWidth' : 'borderLeftWidth';
     const inlineStartBorderCompensation = parseInt(cellComputedStyle[borderPhysicalWidthProp], 10) > 0 ? 0 : 1;
     const topBorderCompensation = parseInt(cellComputedStyle.borderTopWidth, 10) > 0 ? 0 : 1;
@@ -575,7 +538,7 @@ export class BaseEditor {
     const maxWidth = this.hot.view.maximumVisibleElementWidth(cellStartOffset) -
       actualVerticalScrollbarWidth + inlineStartBorderCompensation;
     const maxHeight = Math.max(this.hot.view.maximumVisibleElementHeight(cellTopOffset) -
-      actualHorizontalScrollbarWidth + topBorderCompensation, 23);
+      actualHorizontalScrollbarWidth + topBorderCompensation, this.hot.view.getDefaultRowHeight());
 
     return {
       top: topPos,

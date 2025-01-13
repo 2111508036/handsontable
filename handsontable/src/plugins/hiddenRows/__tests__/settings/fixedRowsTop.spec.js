@@ -15,6 +15,13 @@ describe('HiddenRows', () => {
 
   beforeEach(function() {
     this.$container = $(`<div id="${id}"></div>`).appendTo('body');
+
+    // Matchers configuration.
+    this.matchersConfig = {
+      toMatchHTML: {
+        keepAttributes: ['class']
+      }
+    };
   });
 
   afterEach(function() {
@@ -39,11 +46,11 @@ describe('HiddenRows', () => {
       expect(getTopClone().find('tbody tr').length).toBe(2);
       expect(extractDOMStructure(getTopClone())).toMatchHTML(`
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <th class="${CSS_CLASS_AFTER_HIDDEN_ROW}">2</th>
             <td class="${CSS_CLASS_AFTER_HIDDEN_ROW}">A2</td>
           </tr>
-          <tr>
+          <tr class="ht__row_even">
             <th class="">3</th>
             <td class="">A3</td>
           </tr>
@@ -65,11 +72,11 @@ describe('HiddenRows', () => {
       expect(getTopClone().find('tbody tr').length).toBe(2);
       expect(extractDOMStructure(getTopClone())).toMatchHTML(`
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <th class="${CSS_CLASS_BEFORE_HIDDEN_ROW}">1</th>
             <td class="">A1</td>
           </tr>
-          <tr>
+          <tr class="ht__row_even">
             <th class="${CSS_CLASS_AFTER_HIDDEN_ROW}">3</th>
             <td class="${CSS_CLASS_AFTER_HIDDEN_ROW}">A3</td>
           </tr>
@@ -91,7 +98,7 @@ describe('HiddenRows', () => {
       expect(getTopClone().find('tbody tr').length).toBe(1);
       expect(extractDOMStructure(getTopClone())).toMatchHTML(`
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <th class="${CSS_CLASS_BEFORE_HIDDEN_ROW}">1</th>
             <td class="">A1</td>
           </tr>
@@ -114,7 +121,7 @@ describe('HiddenRows', () => {
       expect(getTopClone().find('tbody tr').length).toBe(1);
       expect(extractDOMStructure(getTopClone())).toMatchHTML(`
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <th class="${CSS_CLASS_AFTER_HIDDEN_ROW} ${CSS_CLASS_BEFORE_HIDDEN_ROW}">2</th>
             <td class="${CSS_CLASS_AFTER_HIDDEN_ROW}">A2</td>
           </tr>

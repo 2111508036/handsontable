@@ -70,7 +70,7 @@ describe('AutoRowSize', () => {
 
     const newHeight = spec().$container[0].scrollHeight;
 
-    expect(oldHeight).toBeLessThan(newHeight);
+    expect(oldHeight).toBeLessThanOrEqual(newHeight);
   });
 
   it('should draw scrollbar correctly (proper height) after calculation when autoRowSize option is set ' +
@@ -141,7 +141,7 @@ describe('AutoRowSize', () => {
       const nrOfRows = SYNC_CALCULATION_LIMIT - 1;
 
       handsontable({
-        data: Handsontable.helper.createSpreadsheetData(nrOfRows, nrOfColumns),
+        data: createSpreadsheetData(nrOfRows, nrOfColumns),
         autoRowSize: true
       });
 
@@ -155,7 +155,7 @@ describe('AutoRowSize', () => {
       const nrOfRows = SYNC_CALCULATION_LIMIT + 1;
 
       handsontable({
-        data: Handsontable.helper.createSpreadsheetData(nrOfRows, nrOfColumns),
+        data: createSpreadsheetData(nrOfRows, nrOfColumns),
         autoRowSize: true
       });
 
@@ -169,7 +169,7 @@ describe('AutoRowSize', () => {
       const nrOfRows = SYNC_CALCULATION_LIMIT + CALCULATION_STEP - 1;
 
       handsontable({
-        data: Handsontable.helper.createSpreadsheetData(nrOfRows, nrOfColumns),
+        data: createSpreadsheetData(nrOfRows, nrOfColumns),
         autoRowSize: true
       });
 
@@ -184,7 +184,7 @@ describe('AutoRowSize', () => {
       const nrOfRows = SYNC_CALCULATION_LIMIT + CALCULATION_STEP + 1;
 
       handsontable({
-        data: Handsontable.helper.createSpreadsheetData(nrOfRows, nrOfColumns),
+        data: createSpreadsheetData(nrOfRows, nrOfColumns),
         autoRowSize: true
       });
 
@@ -283,8 +283,8 @@ describe('AutoRowSize', () => {
 
     keyDownUp('enter');
 
-    expect(getInlineStartClone().find('.wtHolder').scrollTop()).toBe(89);
-    expect(getMaster().find('.wtHolder').scrollTop()).toBe(89);
+    expect(getInlineStartClone().find('.wtHolder').scrollTop()).toBe(90);
+    expect(getMaster().find('.wtHolder').scrollTop()).toBe(90);
   });
 
   it('should consider CSS style of each instance separately', () => {
@@ -516,7 +516,7 @@ describe('AutoRowSize', () => {
 
   it('should resize the column headers properly, according the their content sizes', () => {
     handsontable({
-      data: Handsontable.helper.createSpreadsheetData(30, 30),
+      data: createSpreadsheetData(30, 30),
       colHeaders(index) {
         if (index === 22) {
           return 'a<br>much<br>longer<br>label';
@@ -563,11 +563,54 @@ describe('AutoRowSize', () => {
     expect(calculateColumnsWidth).not.toHaveBeenCalled();
   });
 
+  it('should ignore calculate row heights for samples from hidden columns', () => {
+    const data = createSpreadsheetData(3, 5);
+
+    data[0][2] = 'Very long text that causes the column to be wide';
+
+    handsontable({
+      data,
+      colHeaders: true,
+      autoRowSize: true,
+    });
+
+    const hidingMap = columnIndexMapper().createAndRegisterIndexMap('my-hiding-map', 'hiding');
+
+    hidingMap.setValueAtIndex(2, true);
+    render();
+
+    expect(getRowHeight(0)).toBe(23);
+    expect(getRowHeight(1)).toBe(23);
+    expect(getRowHeight(2)).toBe(23);
+  });
+
+  it('should correctly apply the column widths to the measured row when the first column is hidden (#dev-569)', () => {
+    const data = createSpreadsheetData(1, 6);
+
+    data[0][2] = 'Some text';
+    data[0][4] = 'Some longer text';
+    data[0][5] = 'Very long text that causes the column to be wide';
+
+    handsontable({
+      data,
+      colHeaders: true,
+      autoRowSize: true,
+      autoColumnSize: true, // this is required to replicate the issue
+    });
+
+    const hidingMap = columnIndexMapper().createAndRegisterIndexMap('my-hiding-map', 'hiding');
+
+    hidingMap.setValueAtIndex(0, true);
+    render();
+
+    expect(getRowHeight(0)).toBe(23);
+  });
+
   it('should not throw error while traversing header\'s DOM elements', () => {
     const onErrorSpy = spyOn(window, 'onerror');
 
     handsontable({
-      data: Handsontable.helper.createSpreadsheetData(5, 5),
+      data: createSpreadsheetData(5, 5),
       colHeaders: true,
       autoRowSize: true,
       afterGetColHeader(column, TH) {
@@ -578,5 +621,72 @@ describe('AutoRowSize', () => {
     });
 
     expect(onErrorSpy).not.toHaveBeenCalled();
+  });
+
+  it('should keep the viewport position unchanged after resetting all rows heights (#dev-1888)', () => {
+    handsontable({
+      data: createSpreadsheetData(50, 10),
+      width: 400,
+      height: 400,
+      autoRowSize: true,
+      rowHeaders: ['Longer <br> header <br> name'],
+      colHeaders: true,
+    });
+
+    scrollViewportTo(49, 0);
+
+    expect(topOverlay().getScrollPosition()).toBe(833);
+
+    selectColumns(2, 2);
+    listen();
+    keyDownUp('delete');
+
+    expect(topOverlay().getScrollPosition()).toBe(833);
+  });
+
+  it('should correctly calculate row heights for cell\'s content that produce' +
+     'heights with fractions (#dev-1926)', () => {
+    const css = '.handsontable .htCheckboxRendererLabel { height: 24.5px !important }'; // creates cell height with
+    // fraction
+    const head = document.head;
+    const style = document.createElement('style');
+
+    style.type = 'text/css';
+
+    if (style.styleSheet) {
+      style.styleSheet.cssText = css;
+    } else {
+      style.appendChild(document.createTextNode(css));
+    }
+
+    $(head).append(style);
+
+    handsontable({
+      data: createSpreadsheetObjectData(20, 1).map((row) => {
+        row.prop0 = false;
+
+        return row;
+      }),
+      autoRowSize: true,
+      rowHeaders: true,
+      colHeaders: true,
+      columns: [
+        {
+          type: 'checkbox',
+          label: {
+            position: 'after',
+            property: 'prop0',
+          }
+        }
+      ],
+    });
+
+    expect(getRowHeight(0)).toBe(26);
+    expect(getRowHeight(4)).toBe(26);
+    expect(getRowHeight(9)).toBe(26);
+    expect(getRowHeight(14)).toBe(26);
+    expect(getRowHeight(19)).toBe(26);
+
+    $(style).remove();
   });
 });

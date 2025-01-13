@@ -1,7 +1,7 @@
 import path from 'path';
 import fse from 'fs-extra';
 import glob from 'glob';
-import { displayErrorMessage } from '../../scripts/utils/console.mjs';
+import { displayErrorMessage, displayWarningMessage } from '../../scripts/utils/console.mjs';
 
 const TARGET_PATH = './tmp/';
 const PACKAGE_PATH = path.resolve('package.json');
@@ -35,17 +35,25 @@ FILES_TO_COPY.forEach((fileToCopy) => {
       file = path.join(...path.normalize(file).split(path.sep).slice(pathSlice));
     }
 
-    fse.copySync(
-      from,
-      path.resolve(`${TARGET_PATH}${file.replace('../', '')}`),
-      { overwrite: true });
+    const to = path.resolve(`${TARGET_PATH}${file.replace('../', '')}`);
+
+    if (fse.existsSync(from)) {
+      fse.copySync(from, to, { overwrite: true });
+    } else {
+      displayWarningMessage(`The copy source file or directory does not exist: ${from}`);
+    }
   });
 });
 
 /**
  * Prepare exports basing on wildcards in paths.
  */
-const regexpJSFiles = /\.(m|)js$/;
+const regexpJSFiles = /\.(m?js|d\.ts)$/;
+const entrypointMap = {
+  '.mjs': 'import',
+  '.js': 'require',
+  '.ts': 'types',
+};
 const groupedExports = EXPORTS_RULES.flatMap((rule) => {
   if (typeof rule !== 'string') {
     return rule;
@@ -62,9 +70,7 @@ const groupedExports = EXPORTS_RULES.flatMap((rule) => {
         rules[cleanPath] = {};
       }
 
-      const key = filePath.endsWith('.mjs') ? 'import' : 'require';
-
-      rules[cleanPath][key] = filePath;
+      rules[cleanPath][entrypointMap[path.extname(filePath)]] = filePath;
 
     } else {
       rules[filePath] = filePath;

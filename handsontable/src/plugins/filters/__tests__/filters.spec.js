@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-
 describe('Filters', () => {
   const id = 'testContainer';
 
@@ -25,10 +23,8 @@ describe('Filters', () => {
     });
 
     dropdownMenu(1);
-    $(dropdownMenuRootElement().querySelector('.htUISelect')).simulate('click');
-    $(conditionMenuRootElements().first.querySelector('tbody :nth-child(9) td'))
-      .simulate('mousedown')
-      .simulate('mouseup');
+    openDropdownByConditionMenu();
+    selectDropdownByConditionMenuOption('Begins with');
 
     setTimeout(() => {
       // Begins with 'c'
@@ -658,78 +654,6 @@ describe('Filters', () => {
 
       expect(getDataAtCell(3, 1)).toBe('Pearson Douglas');
       expect(getDataAtCell(3, 2)).toBe('Esmont');
-    });
-  });
-
-  describe('Undo/Redo', () => {
-    it('should undo previously added filters', () => {
-      const hot = handsontable({
-        data: getDataForFilters(),
-        columns: getColumnsForFilters(),
-        dropdownMenu: true,
-        filters: true,
-        width: 500,
-        height: 300
-      });
-      const plugin = hot.getPlugin('filters');
-
-      plugin.addCondition(0, 'gt', [3]);
-      plugin.filter();
-      plugin.addCondition(2, 'begins_with', ['b']);
-      plugin.filter();
-      plugin.addCondition(4, 'eq', ['green']);
-      plugin.filter();
-
-      expect(getData().length).toEqual(2);
-
-      hot.undo();
-
-      expect(getData().length).toEqual(3);
-
-      hot.undo();
-
-      expect(getData().length).toEqual(36);
-
-      hot.undo();
-
-      expect(getData().length).toEqual(39);
-    });
-
-    it('should redo previously reverted filters', () => {
-      const hot = handsontable({
-        data: getDataForFilters(),
-        columns: getColumnsForFilters(),
-        dropdownMenu: true,
-        filters: true,
-        width: 500,
-        height: 300
-      });
-      const plugin = hot.getPlugin('filters');
-
-      plugin.addCondition(0, 'gt', [3]);
-      plugin.filter();
-      plugin.addCondition(2, 'begins_with', ['b']);
-      plugin.filter();
-      plugin.addCondition(4, 'eq', ['green']);
-      plugin.filter();
-
-      hot.undo();
-      hot.undo();
-      hot.undo();
-
-      expect(getData().length).toEqual(39);
-
-      hot.redo();
-
-      expect(getData().length).toEqual(36);
-
-      hot.redo();
-
-      expect(getData().length).toEqual(3);
-
-      hot.redo();
-
-      expect(getData().length).toEqual(2);
     });
   });
 

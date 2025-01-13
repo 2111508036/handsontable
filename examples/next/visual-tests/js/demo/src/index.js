@@ -1,128 +1,79 @@
-import Handsontable from "handsontable/base";
-import "handsontable/dist/handsontable.min.css";
-import "pikaday/css/pikaday.css";
+// Import global CSS files first
+import "handsontable/dist/handsontable.full.css";
 
-import { generateExampleData, isArabicDemoEnabled } from "./utils";
-import { progressBarRenderer, starRenderer } from "./customRenderers";
-import "./styles.css";
-import { registerLanguageDictionary, arAR } from "handsontable/i18n";
+import "./styles/styles.css";
 
-// choose cell types you want to use and import them
-import {
-  registerCellType,
-  CheckboxCellType,
-  DateCellType,
-  DropdownCellType,
-  NumericCellType,
-} from "handsontable/cellTypes";
+// Import JavaScript modules
+import Navigo from 'navigo';
+import { initializeDataGrid } from './datagrid';
+import { initializeTwoTablesDemo } from './demos/twoTables/twoTablesDemo';
+import { initializeCellTypeDemo } from './demos/cellTypes/cellTypesDemo';
+import { initializeArabicRtlDemo } from './demos/arabicRtl/arabicRtlDemo';
+import { initializeCustomStyleDemo } from './demos/customStyle/customStyleDemo';
+import { initializeMergedCellsDemo } from './demos/mergedCells/mergedCellsDemo';
+import { initializeNestedHeadersDemo } from './demos/nestedHeaders/nestedHeadersDemo';
+import { initializeNestedRowsDemo } from './demos/nestedRows/nestedRowsDemo';
 
-import {
-  registerPlugin,
-  AutoColumnSize,
-  ContextMenu,
-  CopyPaste,
-  DropdownMenu,
-  Filters,
-  HiddenColumns,
-  HiddenRows,
-  ManualRowMove,
-  MultiColumnSorting,
-  UndoRedo,
-} from 'handsontable/plugins';
+// Function to dynamically load CSS
+function loadCSS(href) {
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = href;
+  link.className = 'dynamic-css';
+  document.head.appendChild(link);
+}
 
-// register imported cell types and plugins
-registerPlugin(AutoColumnSize);
-registerPlugin(ContextMenu);
-registerPlugin(CopyPaste);
-registerPlugin(DropdownMenu);
-registerPlugin(Filters);
-registerPlugin(HiddenColumns);
-registerPlugin(HiddenRows);
-registerPlugin(ManualRowMove);
-registerPlugin(MultiColumnSorting);
-registerPlugin(UndoRedo);
+// Function to remove dynamically loaded CSS
+function removeCSS() {
+  const links = document.querySelectorAll('link.dynamic-css');
+  links.forEach(link => link.remove());
+}
 
-// register imported cell types and plugins
-registerCellType(DateCellType);
-registerCellType(DropdownCellType);
-registerCellType(CheckboxCellType);
-registerCellType(NumericCellType);
+// Initialize the router
+const router = new Navigo('/');
 
-registerLanguageDictionary(arAR);
-
-import {
-  alignHeaders,
-  addClassesToRows,
-  changeCheckboxCell,
-  drawCheckboxInRowHeaders
-} from "./hooksCallbacks";
-
-const example = document.getElementById("example");
-
-new Handsontable(example, {
-  data: generateExampleData(),
-  layoutDirection: isArabicDemoEnabled() ? "rtl" : "ltr",
-  language: isArabicDemoEnabled() ? arAR.languageCode : "en-US",
-  height: 450,
-  colWidths: [140, 192, 100, 90, 90, 110, 97, 100, 126],
-  colHeaders: [
-    "Company name",
-    "Name",
-    "Sell date",
-    "In stock",
-    "Qty",
-    "Progress",
-    "Rating",
-    "Order ID",
-    "Country"
-  ],
-  columns: [
-    { data: 1, type: "text" },
-    { data: 3, type: "text" },
-    {
-      data: 4,
-      type: "date",
-      allowInvalid: false,
-      dateFormat: isArabicDemoEnabled() ? "M/D/YYYY" : "DD/MM/YYYY",
+// Define routes
+router
+  .on({
+    '/': function () {
+      removeCSS();
+      loadCSS('./assets/styles.css');
+      initializeDataGrid();
     },
-    {
-      data: 6,
-      type: "checkbox",
-      className: "htCenter"
+    '/two-tables-demo': function () {
+      removeCSS();
+      loadCSS('./assets/two-tables-demo.css');
+      initializeTwoTablesDemo();
     },
-    {
-      data: 7,
-      type: "numeric"
+    '/cell-types-demo': function () {
+      removeCSS();
+      loadCSS('./assets/cell-types-demo.css');
+      initializeCellTypeDemo();
     },
-    {
-      data: 8,
-      renderer: progressBarRenderer,
-      readOnly: true,
-      className: "htMiddle"
+    '/arabic-rtl-demo': function () {
+      removeCSS();
+      loadCSS('./assets/arabic-rtl-demo.css');
+      initializeArabicRtlDemo();
     },
-    {
-      data: 9,
-      renderer: starRenderer,
-      readOnly: true,
-      className: "star htCenter"
+    '/custom-style-demo': function () {
+      removeCSS();
+      loadCSS('./assets/custom-style-demo.css');
+      initializeCustomStyleDemo();
     },
-    { data: 5, type: "text" },
-    { data: 2, type: "text" }
-  ],
-  dropdownMenu: true,
-  hiddenColumns: {
-    indicators: true
-  },
-  contextMenu: true,
-  multiColumnSorting: true,
-  filters: true,
-  rowHeaders: true,
-  manualRowMove: true,
-  afterGetColHeader: alignHeaders,
-  afterGetRowHeader: drawCheckboxInRowHeaders,
-  afterOnCellMouseDown: changeCheckboxCell,
-  beforeRenderer: addClassesToRows,
-  licenseKey: "non-commercial-and-evaluation"
-});
-
-console.log(`Handsontable: v${Handsontable.version} (${Handsontable.buildDate})`);
+    '/merged-cells-demo': function () {
+      removeCSS();
+      loadCSS('./assets/merged-cells-demo.css');
+      initializeMergedCellsDemo();
+    },
+    '/nested-headers-demo': function () {
+      removeCSS();
+      loadCSS('./assets/nested-headers-demo.css');
+      initializeNestedHeadersDemo();
+    },
+    '/nested-rows-demo': function () {
+      removeCSS();
+      loadCSS('./assets/nested-rows-demo.css');
+      initializeNestedRowsDemo();
+    },
+  })
+  .resolve();

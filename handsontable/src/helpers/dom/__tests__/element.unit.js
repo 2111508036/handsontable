@@ -5,10 +5,13 @@ import {
   getParent,
   hasClass,
   isInput,
+  removeAttribute,
   removeClass,
   selectElementIfAllowed,
+  setAttribute,
   fastInnerHTML,
   isVisible,
+  findFirstParentWithClass,
 } from 'handsontable/helpers/dom/element';
 
 describe('DomElement helper', () => {
@@ -134,6 +137,79 @@ describe('DomElement helper', () => {
 
         expect(closest(element, nodes, until)).toBe(null);
       });
+    });
+  });
+
+  //
+  // Handsontable.helper.closestDown
+  //
+  describe('findFirstParentWithClass', () => {
+    const test1 = '<div class="wrapper1"><table><tbody><tr class="ht-test-sth">' +
+      '<td>test1</td></tr></tbody></table></div>';
+    const test2 = `<div><table class="test2 test2-2"><tbody class="ht-test-sth ht-test-sth2"><tr>' +
+      '<td>test2${test1}</td></tr></tbody></table></div>`;
+
+    it('should return the closest parent with the provided class', () => {
+      const wrapper1 = document.createElement('div');
+      const wrapper2 = document.createElement('div');
+
+      wrapper1.innerHTML = test1;
+      wrapper2.innerHTML = test2;
+
+      const td1 = wrapper1.querySelector('td');
+      const td2 = wrapper2.querySelector('td');
+
+      expect(findFirstParentWithClass(td1, 'ht-test-sth').element).toBe(wrapper1.querySelector('.ht-test-sth'));
+      expect(findFirstParentWithClass(td1, 'ht-test-sth').classNames).toEqual(['ht-test-sth']);
+      expect(findFirstParentWithClass(td1, 'wrapper1').element).toBe(wrapper1.querySelector('.wrapper1'));
+      expect(findFirstParentWithClass(td1, 'wrapper1').classNames).toEqual(['wrapper1']);
+
+      expect(findFirstParentWithClass(td2, 'ht-test-sth').element).toBe(wrapper2.querySelector('.ht-test-sth'));
+      expect(findFirstParentWithClass(td2, 'ht-test-sth').classNames).toEqual(['ht-test-sth']);
+      expect(findFirstParentWithClass(td2, 'test2').element).toBe(wrapper2.querySelector('.test2'));
+      expect(findFirstParentWithClass(td2, 'test2').classNames).toEqual(['test2']);
+    });
+
+    it('should return the closest parent with a class that matches the provided regex', () => {
+      const wrapper1 = document.createElement('div');
+      const wrapper2 = document.createElement('div');
+
+      wrapper1.innerHTML = test1;
+      wrapper2.innerHTML = test2;
+
+      const td1 = wrapper1.querySelector('td');
+      const td2 = wrapper2.querySelector('td');
+
+      expect(findFirstParentWithClass(td1, /xt-test-(.*)/).element).toBe(undefined);
+      expect(findFirstParentWithClass(td1, /xt-test-(.*)/).classNames).toEqual([]);
+      expect(findFirstParentWithClass(td1, /vrapper(.*)/).element).toBe(undefined);
+      expect(findFirstParentWithClass(td1, /vrapper(.*)/).classNames).toEqual([]);
+
+      expect(findFirstParentWithClass(td2, /xt-test-(.*)/).element).toBe(undefined);
+      expect(findFirstParentWithClass(td2, /xt-test-(.*)/).classNames).toEqual([]);
+      expect(findFirstParentWithClass(td2, /xtest2(.*)/).element).toBe(undefined);
+      expect(findFirstParentWithClass(td2, /xtest2(.*)/).classNames).toEqual([]);
+    });
+
+    it('should return `undefined` as the element and an empty array as the class list array if no elements were found', () => {
+      const wrapper1 = document.createElement('div');
+      const wrapper2 = document.createElement('div');
+
+      wrapper1.innerHTML = test1;
+      wrapper2.innerHTML = test2;
+
+      const td1 = wrapper1.querySelector('td');
+      const td2 = wrapper2.querySelector('td');
+
+      expect(findFirstParentWithClass(td1, /ht-test-(.*)/).element).toBe(wrapper1.querySelector('.ht-test-sth'));
+      expect(findFirstParentWithClass(td1, /ht-test-(.*)/).classNames).toEqual(['ht-test-sth']);
+      expect(findFirstParentWithClass(td1, /wrapper(.*)/).element).toBe(wrapper1.querySelector('.wrapper1'));
+      expect(findFirstParentWithClass(td1, /wrapper(.*)/).classNames).toEqual(['wrapper1']);
+
+      expect(findFirstParentWithClass(td2, /ht-test-(.*)/).element).toBe(wrapper2.querySelector('.ht-test-sth'));
+      expect(findFirstParentWithClass(td2, /ht-test-(.*)/).classNames).toEqual(['ht-test-sth', 'ht-test-sth2']);
+      expect(findFirstParentWithClass(td2, /test2(.*)/).element).toBe(wrapper2.querySelector('.test2'));
+      expect(findFirstParentWithClass(td2, /test2(.*)/).classNames).toEqual(['test2', 'test2-2']);
     });
   });
 
@@ -349,16 +425,38 @@ describe('DomElement helper', () => {
       expect(element.className).toBe('test3');
     });
 
+    it('should remove CSS class passed as a RegExp without removing rest CSS classes', () => {
+      removeClass(element, new RegExp('(.*)1'));
+
+      expect(element.className).toBe('test3');
+    });
+
     it('should remove multiple CSS classes (delimited by an empty space)', () => {
       removeClass(element, 'test2 test3 test1');
 
       expect(element.className).toBe('');
     });
 
-    it('should remove CSS multiple classes (passed as an array)', () => {
+    it('should remove multiple CSS classes (passed as an array)', () => {
       removeClass(element, ['test2', 'test3', 'test1']);
 
       expect(element.className).toBe('');
+    });
+
+    it('should remove multiple CSS classes passed as regexes (in an array)', () => {
+      element.className = 'test1 test2 test3 test4';
+
+      removeClass(element, [new RegExp('(.*)1'), new RegExp('(.*)3'), new RegExp('(.*)4')]);
+
+      expect(element.className).toBe('test2');
+    });
+
+    it('should remove CSS multiple classes passed as a mix of regexes and strings (in an array)', () => {
+      element.className = 'test1 test2 test3 test4';
+
+      removeClass(element, [new RegExp('(.*)1'), 'test3', new RegExp('(.*)4')]);
+
+      expect(element.className).toBe('test2');
     });
 
     it('should not touch the DOM element when the passed argument is empty', () => {
@@ -386,6 +484,155 @@ describe('DomElement helper', () => {
       removeClass(elementMock, ['']);
 
       expect(elementMock.classList.remove).not.toHaveBeenCalled();
+    });
+  });
+
+  /**
+   * Handsontable.helper.setAttribute
+   */
+  describe('setAttribute', () => {
+    let element = null;
+
+    beforeEach(() => {
+      element = document.createElement('div');
+      element.setAttribute('test1', 'test1-value');
+    });
+
+    afterEach(() => {
+      element = null;
+    });
+
+    it('should add a single attribute', () => {
+      setAttribute(element, 'test2', 'test2-value');
+
+      expect(element.attributes.length).toBe(2);
+      expect(element.attributes.test1.value).toBe('test1-value');
+      expect(element.attributes.test2.value).toBe('test2-value');
+    });
+
+    it('should add multiple attributes without removing old ones (passed as an array)', () => {
+      setAttribute(element, [
+        ['test2', 'test2-value'],
+        ['test4', 'test4-value'],
+        ['test3', 'test3-value'],
+      ]);
+
+      expect(element.attributes.length).toBe(4);
+      expect(element.attributes.test1.value).toBe('test1-value');
+      expect(element.attributes.test2.value).toBe('test2-value');
+      expect(element.attributes.test3.value).toBe('test3-value');
+      expect(element.attributes.test4.value).toBe('test4-value');
+    });
+
+    it('should not touch the DOM element when the passed argument is not provided or is an empty array', () => {
+      const elementMock = {
+        setAttribute: jasmine.createSpy('setAttribute'),
+      };
+
+      setAttribute(elementMock);
+
+      expect(elementMock.setAttribute).not.toHaveBeenCalled();
+
+      elementMock.setAttribute.calls.reset();
+      setAttribute(elementMock, '');
+
+      expect(elementMock.setAttribute).not.toHaveBeenCalled();
+
+      elementMock.setAttribute.calls.reset();
+      setAttribute(elementMock, []);
+
+      expect(elementMock.setAttribute).not.toHaveBeenCalled();
+
+      elementMock.setAttribute.calls.reset();
+      setAttribute(elementMock, ['']);
+
+      expect(elementMock.setAttribute).not.toHaveBeenCalled();
+    });
+  });
+
+  /**
+   * Handsontable.helper.removeAttribute
+   */
+  describe('removeAttribute', () => {
+    let element = null;
+
+    beforeEach(() => {
+      element = document.createElement('div');
+      element.setAttribute('test1', 'test1-value');
+      element.setAttribute('test2', 'test2-value');
+      element.setAttribute('test3', 'test3-value');
+      element.setAttribute('test4', 'test4-value');
+    });
+
+    afterEach(() => {
+      element = null;
+    });
+
+    it('should remove a single attribute', () => {
+      removeAttribute(element, 'test1');
+
+      expect(element.attributes.length).toBe(3);
+      expect(element.getAttributeNames()).toEqual(['test2', 'test3', 'test4']);
+    });
+
+    it('should remove attributes by passing a single regex', () => {
+      removeAttribute(element, new RegExp('(.*)1'));
+
+      expect(element.attributes.length).toBe(3);
+      expect(element.getAttributeNames()).toEqual(['test2', 'test3', 'test4']);
+    });
+
+    it('should remove multiple attributes (delimited by an empty space)', () => {
+      removeAttribute(element, 'test2 test3 test1');
+
+      expect(element.attributes.length).toBe(1);
+      expect(element.getAttributeNames()).toEqual(['test4']);
+    });
+
+    it('should remove multiple attributes (passed as an array)', () => {
+      removeAttribute(element, ['test2', 'test3', 'test1']);
+
+      expect(element.attributes.length).toBe(1);
+      expect(element.getAttributeNames()).toEqual(['test4']);
+    });
+
+    it('should remove multiple attributes by passing regexes in an array', () => {
+      removeAttribute(element, [new RegExp('(.*)1'), new RegExp('(.*)3'), new RegExp('(.*)4')]);
+
+      expect(element.attributes.length).toBe(1);
+      expect(element.getAttributeNames()).toEqual(['test2']);
+    });
+
+    it('should remove multiple attributes by passing as a mix of regexes and strings in an array', () => {
+      removeAttribute(element, [new RegExp('(.*)1'), 'test3', new RegExp('(.*)4')]);
+
+      expect(element.attributes.length).toBe(1);
+      expect(element.getAttributeNames()).toEqual(['test2']);
+    });
+
+    it('should not touch the DOM element when the passed argument is empty', () => {
+      const elementMock = {
+        removeAttribute: jasmine.createSpy('removeAttribute'),
+      };
+
+      removeAttribute(elementMock);
+
+      expect(elementMock.removeAttribute).not.toHaveBeenCalled();
+
+      elementMock.removeAttribute.calls.reset();
+      removeAttribute(elementMock, '');
+
+      expect(elementMock.removeAttribute).not.toHaveBeenCalled();
+
+      elementMock.removeAttribute.calls.reset();
+      removeAttribute(elementMock, []);
+
+      expect(elementMock.removeAttribute).not.toHaveBeenCalled();
+
+      elementMock.removeAttribute.calls.reset();
+      removeAttribute(elementMock, ['']);
+
+      expect(elementMock.removeAttribute).not.toHaveBeenCalled();
     });
   });
 

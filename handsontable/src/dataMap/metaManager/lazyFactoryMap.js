@@ -1,4 +1,3 @@
-import { arrayFilter } from '../../helpers/array';
 import { assert, isUnsignedNumber, isNullish } from './utils';
 
 /* eslint-disable jsdoc/require-description-complete-sentence */
@@ -124,31 +123,38 @@ import { assert, isUnsignedNumber, isNullish } from './utils';
  */
 /* eslint-enable jsdoc/require-description-complete-sentence */
 export default class LazyFactoryMap {
+  /**
+   * The data factory function.
+   *
+   * @type {Function}
+   */
+  valueFactory;
+  /**
+   * An array which contains data.
+   *
+   * @type {Array}
+   */
+  data = [];
+  /**
+   * An array of indexes where the key of the array is mapped to the value which points to the
+   * specific position of the data array.
+   *
+   * @type {number[]}
+   */
+  index = [];
+  /**
+   * The collection of indexes that points to the data items which can be replaced by obtaining new
+   * ones. The "holes" are an intended effect of deleting entries.
+   *
+   * The idea of "holes" generally allows us to not modify the "data" structure while removing
+   * items from the collection.
+   *
+   * @type {Set<number>}
+   */
+  holes = new Set();
+
   constructor(valueFactory) {
     this.valueFactory = valueFactory;
-    /**
-     * An array which contains data.
-     *
-     * @type {Array}
-     */
-    this.data = [];
-    /**
-     * An array of indexes where the key of the array is mapped to the value which points to the
-     * specific position of the data array.
-     *
-     * @type {number[]}
-     */
-    this.index = [];
-    /**
-     * The collection of indexes that points to the data items which can be replaced by obtaining new
-     * ones. The "holes" are an intended effect of deleting entries.
-     *
-     * The idea of "holes" generally allows us to not modify the "data" structure while removing
-     * items from the collection.
-     *
-     * @type {Set<number>}
-     */
-    this.holes = new Set();
   }
 
   /**
@@ -166,7 +172,7 @@ export default class LazyFactoryMap {
     if (dataIndex >= 0) {
       result = this.data[dataIndex];
 
-      if (result === void 0) {
+      if (result === undefined) {
         result = this.valueFactory(key);
         this.data[dataIndex] = result;
       }
@@ -194,7 +200,7 @@ export default class LazyFactoryMap {
    * new data.
    *
    * @param {number} key The key as volatile zero-based index at which to begin inserting space for new data.
-   * @param {number} [amount=1] Ammount of data to insert.
+   * @param {number} [amount=1] Amount of data to insert.
    */
   insert(key, amount = 1) {
     assert(() => (isUnsignedNumber(key) || isNullish(key)), 'Expecting an unsigned number or null/undefined argument.');
@@ -204,7 +210,7 @@ export default class LazyFactoryMap {
 
     for (let i = 0; i < amount; i++) {
       newIndexes.push(dataLength + i);
-      this.data.push(void 0);
+      this.data.push(undefined);
     }
 
     const insertionIndex = isNullish(key) ? this.index.length : key;
@@ -216,7 +222,7 @@ export default class LazyFactoryMap {
    * Removes (soft remove) data from "index" and according to the amount of data.
    *
    * @param {number} key The key as volatile zero-based index at which to begin removing the data.
-   * @param {number} [amount=1] Ammount data to remove.
+   * @param {number} [amount=1] Amount data to remove.
    */
   remove(key, amount = 1) {
     assert(() => (isUnsignedNumber(key) || isNullish(key)), 'Expecting an unsigned number or null/undefined argument.');
@@ -247,7 +253,9 @@ export default class LazyFactoryMap {
    * @returns {Iterator}
    */
   values() {
-    return arrayFilter(this.data, (_, index) => !this.holes.has(index))[Symbol.iterator]();
+    return this.data.filter((meta, index) => {
+      return meta !== undefined && !this.holes.has(index);
+    })[Symbol.iterator]();
   }
 
   /**
@@ -261,7 +269,7 @@ export default class LazyFactoryMap {
     for (let i = 0; i < this.data.length; i++) {
       const keyIndex = this._getKeyByStorageIndex(i);
 
-      if (keyIndex !== -1) {
+      if (keyIndex !== -1 && this.data[i] !== undefined) {
         validEntries.push([keyIndex, this.data[i]]);
       }
     }
