@@ -30,11 +30,11 @@ module.exports.create = function create(envArgs) {
         commonjs: 'moment',
         amd: 'moment',
       },
-      pikaday: {
+      '@handsontable/pikaday': {
         root: 'Pikaday',
-        commonjs2: 'pikaday',
-        commonjs: 'pikaday',
-        amd: 'pikaday',
+        commonjs2: '@handsontable/pikaday',
+        commonjs: '@handsontable/pikaday',
+        amd: '@handsontable/pikaday',
       },
       dompurify: {
         root: 'DOMPurify',
@@ -51,7 +51,7 @@ module.exports.create = function create(envArgs) {
       loader: path.resolve(__dirname, 'loader/empty-loader.js'),
     });
     c.plugins.push(
-      new MiniCssExtractPlugin({ filename: `${PACKAGE_FILENAME}.css` })
+      new MiniCssExtractPlugin({ filename: `../styles/${PACKAGE_FILENAME}.css` })
     );
   });
 

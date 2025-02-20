@@ -1,8 +1,15 @@
 import {
   hasClass,
-} from './../../../../helpers/dom/element';
-import { SharedOrderView } from './../utils/orderView';
-import BaseRenderer from './_base';
+  removeAttribute,
+  setAttribute,
+} from '../../../../helpers/dom/element';
+import { SharedOrderView } from '../utils/orderView';
+import { BaseRenderer } from './_base';
+import {
+  A11Y_COLINDEX,
+  A11Y_GRIDCELL,
+  A11Y_TABINDEX
+} from '../../../../helpers/a11y';
 
 /**
  * Cell renderer responsible for managing (inserting, tracking, rendering) TD elements.
@@ -17,21 +24,22 @@ import BaseRenderer from './_base';
  *
  * @class {CellsRenderer}
  */
-export default class CellsRenderer extends BaseRenderer {
+export class CellsRenderer extends BaseRenderer {
+  /**
+   * Cache for OrderView classes connected to specified node.
+   *
+   * @type {WeakMap}
+   */
+  orderViews = new WeakMap();
+  /**
+   * Row index which specifies the row position of the processed cell.
+   *
+   * @type {number}
+   */
+  sourceRowIndex = 0;
+
   constructor() {
     super('TD');
-    /**
-     * Cache for OrderView classes connected to specified node.
-     *
-     * @type {WeakMap}
-     */
-    this.orderViews = new WeakMap();
-    /**
-     * Row index which specifies the row position of the processed cell.
-     *
-     * @type {number}
-     */
-    this.sourceRowIndex = 0;
   }
 
   /**
@@ -72,27 +80,41 @@ export default class CellsRenderer extends BaseRenderer {
       const orderView = this.obtainOrderView(TR);
       const rowHeadersView = rowHeaders.obtainOrderView(TR);
 
-      // @TODO(perf-tip): For cells other than "visual 0" generating diff leads/commands can be skipped. New order view
-      // should share state between next orderViews.
       orderView
         .prependView(rowHeadersView)
         .setSize(columnsToRender)
-        .setOffset(this.table.renderedColumnToSource(0))
+        .setOffset(0)
         .start();
 
       for (let visibleColumnIndex = 0; visibleColumnIndex < columnsToRender; visibleColumnIndex++) {
         orderView.render();
 
-        const TD = orderView.getCurrentNode();
         const sourceColumnIndex = this.table.renderedColumnToSource(visibleColumnIndex);
+        const TD = orderView.getCurrentNode();
 
         if (!hasClass(TD, 'hide')) { // Workaround for hidden columns plugin
           TD.className = '';
         }
+
         TD.removeAttribute('style');
         TD.removeAttribute('dir');
 
+        // Remove all accessibility-related attributes for the cell to start fresh.
+        removeAttribute(TD, [
+          new RegExp('aria-(.*)'),
+          new RegExp('role')
+        ]);
+
         this.table.cellRenderer(sourceRowIndex, sourceColumnIndex, TD);
+
+        if (this.table.isAriaEnabled()) {
+          setAttribute(TD, [
+            ...(TD.hasAttribute('role') ? [] : [A11Y_GRIDCELL()]),
+            A11Y_TABINDEX(-1),
+            // `aria-colindex` is incremented by both tbody and thead rows.
+            A11Y_COLINDEX(sourceColumnIndex + (this.table.rowUtils?.dataAccessObject?.rowHeaders.length ?? 0) + 1),
+          ]);
+        }
       }
 
       orderView.end();

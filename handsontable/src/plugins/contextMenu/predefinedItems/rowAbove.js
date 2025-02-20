@@ -1,4 +1,3 @@
-import { getValidSelection } from '../utils';
 import * as C from '../../../i18n/constants';
 
 export const KEY = 'row_above';
@@ -18,21 +17,23 @@ export default function rowAboveItem() {
       this.alter('insert_row_above', latestSelection.row, 1, 'ContextMenu.rowAbove');
     },
     disabled() {
-      const selected = getValidSelection(this);
+      const range = this.getSelectedRangeLast();
 
-      if (!selected) {
+      if (
+        !range ||
+        this.selection.isSelectedByColumnHeader() ||
+        (range.isSingleHeader() && range.highlight.row < 0) ||
+        (this.countSourceRows() >= this.getSettings().maxRows)
+      ) {
         return true;
       }
 
       if (this.selection.isSelectedByCorner()) {
-        const totalRows = this.countRows();
-
         // Enable "Insert row above" only when there is at least one row.
-        return totalRows === 0;
+        return this.countRows() === 0;
       }
 
-      return this.selection.isSelectedByColumnHeader() ||
-        this.countRows() >= this.getSettings().maxRows;
+      return false;
     },
     hidden() {
       return !this.getSettings().allowInsertRow;

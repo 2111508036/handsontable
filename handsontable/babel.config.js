@@ -14,8 +14,12 @@ const allowedE2EModules = [
   './keyboardEvents',
   './../bootstrap',
   './helpers/custom-matchers',
+  './custom-matchers',
   './helpers/jasmine-helpers',
+  '../helpers/it-themes-extension',
   './asciiTable',
+  '../../../../../test/helpers/asciiTable',
+  './__mocks__/*',
   './MemoryLeakTest',
   '../MemoryLeakTest',
 ];

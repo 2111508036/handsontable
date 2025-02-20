@@ -2,15 +2,11 @@ import { BasePlugin } from '../base';
 import { addClass } from '../../helpers/dom/element';
 import { rangeEach } from '../../helpers/number';
 import { arrayEach, arrayMap, arrayReduce } from '../../helpers/array';
-import { isObject } from '../../helpers/object';
-import { isUndefined } from '../../helpers/mixed';
 import { SEPARATOR } from '../contextMenu/predefinedItems';
-import Hooks from '../../pluginHooks';
+import { Hooks } from '../../core/hooks';
 import hideColumnItem from './contextMenuItem/hideColumn';
 import showColumnItem from './contextMenuItem/showColumn';
 import { HidingMap } from '../../translations';
-
-import './hiddenColumns.scss';
 
 Hooks.getSingleton().register('beforeHideColumns');
 Hooks.getSingleton().register('afterHideColumns');
@@ -27,7 +23,7 @@ export const PLUGIN_PRIORITY = 310;
  * @class HiddenColumns
  *
  * @description
- * The `HiddenColumns` plugin lets you [hide specified columns](@/guides/columns/column-hiding.md).
+ * The `HiddenColumns` plugin lets you [hide specified columns](@/guides/columns/column-hiding/column-hiding.md).
  *
  * "Hiding a column" means that the hidden column doesn't get rendered as a DOM element.
  *
@@ -39,9 +35,9 @@ export const PLUGIN_PRIORITY = 310;
  *
  * | Option | Required | Type | Default | Description |
  * |---|---|---|---|---|
- * | `columns` | No | Array | - | [Hides specified columns by default](@/guides/columns/column-hiding.md#step-1-specify-columns-hidden-by-default) |
- * | `indicators` | No | Boolean | `false` | [Shows UI indicators](@/guides/columns/column-hiding.md#step-2-show-ui-indicators) |
- * | `copyPasteEnabled` | No | Boolean | `true` | [Sets up copy/paste behavior](@/guides/columns/column-hiding.md#step-4-set-up-copy-and-paste-behavior) |
+ * | `columns` | No | Array | - | [Hides specified columns by default](@/guides/columns/column-hiding/column-hiding.md#step-1-specify-columns-hidden-by-default) |
+ * | `indicators` | No | Boolean | `false` | [Shows UI indicators](@/guides/columns/column-hiding/column-hiding.md#step-2-show-ui-indicators) |
+ * | `copyPasteEnabled` | No | Boolean | `true` | [Sets up copy/paste behavior](@/guides/columns/column-hiding/column-hiding.md#step-4-set-up-copy-and-paste-behavior) |
  *
  * @example
  *
@@ -135,13 +131,14 @@ export class HiddenColumns extends BasePlugin {
     return PLUGIN_PRIORITY;
   }
 
-  /**
-   * Cached plugin settings.
-   *
-   * @private
-   * @type {object}
-   */
-  #settings = {};
+  static get DEFAULT_SETTINGS() {
+    return {
+      copyPasteEnabled: true,
+      indicators: false,
+      columns: [],
+    };
+  }
+
   /**
    * Map of hidden columns by the plugin.
    *
@@ -168,25 +165,15 @@ export class HiddenColumns extends BasePlugin {
       return;
     }
 
-    const pluginSettings = this.hot.getSettings()[PLUGIN_KEY];
-
-    if (isObject(pluginSettings)) {
-      this.#settings = pluginSettings;
-
-      if (isUndefined(pluginSettings.copyPasteEnabled)) {
-        pluginSettings.copyPasteEnabled = true;
-      }
-    }
-
     this.#hiddenColumnsMap = new HidingMap();
-    this.#hiddenColumnsMap.addLocalHook('init', () => this.onMapInit());
+    this.#hiddenColumnsMap.addLocalHook('init', () => this.#onMapInit());
     this.hot.columnIndexMapper.registerMap(this.pluginName, this.#hiddenColumnsMap);
 
-    this.addHook('afterContextMenuDefaultOptions', (...args) => this.onAfterContextMenuDefaultOptions(...args));
-    this.addHook('afterGetCellMeta', (row, col, cellProperties) => this.onAfterGetCellMeta(row, col, cellProperties));
-    this.addHook('modifyColWidth', (width, col) => this.onModifyColWidth(width, col));
-    this.addHook('afterGetColHeader', (...args) => this.onAfterGetColHeader(...args));
-    this.addHook('modifyCopyableRange', ranges => this.onModifyCopyableRange(ranges));
+    this.addHook('afterContextMenuDefaultOptions', (...args) => this.#onAfterContextMenuDefaultOptions(...args));
+    this.addHook('afterGetCellMeta', (row, col, cellProperties) => this.#onAfterGetCellMeta(row, col, cellProperties));
+    this.addHook('modifyColWidth', (width, col) => this.#onModifyColWidth(width, col), 2);
+    this.addHook('afterGetColHeader', (...args) => this.#onAfterGetColHeader(...args));
+    this.addHook('modifyCopyableRange', ranges => this.#onModifyCopyableRange(ranges));
 
     super.enablePlugin();
   }
@@ -209,7 +196,6 @@ export class HiddenColumns extends BasePlugin {
    */
   disablePlugin() {
     this.hot.columnIndexMapper.unregisterMap(this.pluginName);
-    this.#settings = {};
 
     super.disablePlugin();
     this.resetCellsMeta();
@@ -359,28 +345,25 @@ export class HiddenColumns extends BasePlugin {
    */
   resetCellsMeta() {
     arrayEach(this.hot.getCellsMeta(), (meta) => {
-      if (meta) {
-        meta.skipColumnOnPaste = false;
-      }
+      meta.skipColumnOnPaste = false;
     });
   }
 
   /**
    * Adds the additional column width for the hidden column indicators.
    *
-   * @private
    * @param {number|undefined} width Column width.
    * @param {number} column Visual column index.
    * @returns {number}
    */
-  onModifyColWidth(width, column) {
+  #onModifyColWidth(width, column) {
     // Hook is triggered internally only for the visible columns. Conditional will be handled for the API
     // calls of the `getColWidth` function on not visible indexes.
     if (this.isHidden(column)) {
       return 0;
     }
 
-    if (this.#settings.indicators && (this.isHidden(column + 1) || this.isHidden(column - 1))) {
+    if (this.getSetting('indicators') && (this.isHidden(column + 1) || this.isHidden(column - 1))) {
 
       // Add additional space for hidden column indicator.
       if (typeof width === 'number' && this.hot.hasColHeaders()) {
@@ -392,13 +375,12 @@ export class HiddenColumns extends BasePlugin {
   /**
    * Sets the copy-related cell meta.
    *
-   * @private
    * @param {number} row Visual row index.
    * @param {number} column Visual column index.
    * @param {object} cellProperties Object containing the cell properties.
    */
-  onAfterGetCellMeta(row, column, cellProperties) {
-    if (this.#settings.copyPasteEnabled === false && this.isHidden(column)) {
+  #onAfterGetCellMeta(row, column, cellProperties) {
+    if (this.getSetting('copyPasteEnabled') === false && this.isHidden(column)) {
       // Cell property handled by the `Autofill` and the `CopyPaste` plugins.
       cellProperties.skipColumnOnPaste = true;
     }
@@ -427,13 +409,12 @@ export class HiddenColumns extends BasePlugin {
   /**
    * Modifies the copyable range, accordingly to the provided config.
    *
-   * @private
    * @param {Array} ranges An array of objects defining copyable cells.
    * @returns {Array}
    */
-  onModifyCopyableRange(ranges) {
+  #onModifyCopyableRange(ranges) {
     // Ranges shouldn't be modified when `copyPasteEnabled` option is set to `true` (by default).
-    if (this.#settings.copyPasteEnabled) {
+    if (this.getSetting('copyPasteEnabled')) {
       return ranges;
     }
 
@@ -475,12 +456,11 @@ export class HiddenColumns extends BasePlugin {
   /**
    * Adds the needed classes to the headers.
    *
-   * @private
    * @param {number} column Visual column index.
    * @param {HTMLElement} TH Header's TH element.
    */
-  onAfterGetColHeader(column, TH) {
-    if (!this.#settings.indicators || column < 0) {
+  #onAfterGetColHeader(column, TH) {
+    if (!this.getSetting('indicators') || column < 0) {
       return;
     }
 
@@ -500,10 +480,9 @@ export class HiddenColumns extends BasePlugin {
   /**
    * Add Show-hide columns to context menu.
    *
-   * @private
    * @param {object} options An array of objects containing information about the pre-defined Context Menu items.
    */
-  onAfterContextMenuDefaultOptions(options) {
+  #onAfterContextMenuDefaultOptions(options) {
     options.items.push(
       {
         name: SEPARATOR
@@ -515,12 +494,12 @@ export class HiddenColumns extends BasePlugin {
 
   /**
    * On map initialized hook callback.
-   *
-   * @private
    */
-  onMapInit() {
-    if (Array.isArray(this.#settings.columns)) {
-      this.hideColumns(this.#settings.columns);
+  #onMapInit() {
+    const columns = this.getSetting('columns');
+
+    if (Array.isArray(columns)) {
+      this.hideColumns(columns);
     }
   }
 
@@ -528,7 +507,6 @@ export class HiddenColumns extends BasePlugin {
    * Destroys the plugin instance.
    */
   destroy() {
-    this.#settings = null;
     this.#hiddenColumnsMap = null;
 
     super.destroy();

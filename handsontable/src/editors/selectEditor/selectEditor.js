@@ -7,6 +7,7 @@ import {
   removeClass,
 } from '../../helpers/dom/element';
 import { objectEach } from '../../helpers/object';
+import { A11Y_HIDDEN } from '../../helpers/a11y';
 
 const EDITOR_VISIBLE_CLASS_NAME = 'ht_editor_visible';
 const SHORTCUTS_GROUP = 'selectEditor';
@@ -26,11 +27,28 @@ export class SelectEditor extends BaseEditor {
    * Initializes editor instance, DOM Element and mount hooks.
    */
   init() {
-    this.select = this.hot.rootDocument.createElement('SELECT');
-    addClass(this.select, 'htSelectEditor');
-    this.select.style.display = 'none';
+    this.selectWrapper = this.hot.rootDocument.createElement('div');
+    this.select = this.hot.rootDocument.createElement('select');
+    this.select.setAttribute('data-hot-input', 'true');
+    this.selectWrapper.style.display = 'none';
 
-    this.hot.rootElement.appendChild(this.select);
+    const ARROW = this.hot.rootDocument.createElement('DIV');
+    const isAriaEnabled = this.hot.getSettings().ariaTags;
+
+    ARROW.className = 'htAutocompleteArrow';
+
+    if (isAriaEnabled) {
+      ARROW.setAttribute(...A11Y_HIDDEN());
+    }
+
+    ARROW.appendChild(this.hot.rootDocument.createTextNode(String.fromCharCode(9660)));
+
+    addClass(this.selectWrapper, 'htSelectEditor');
+    this.selectWrapper.appendChild(this.select);
+
+    this.selectWrapper.insertBefore(ARROW, this.selectWrapper.firstChild);
+
+    this.hot.rootElement.appendChild(this.selectWrapper);
     this.registerHooks();
   }
 
@@ -58,7 +76,7 @@ export class SelectEditor extends BaseEditor {
   open() {
     this._opened = true;
     this.refreshDimensions();
-    this.select.style.display = '';
+    this.selectWrapper.style.display = '';
 
     const shortcutManager = this.hot.getShortcutManager();
 
@@ -72,10 +90,10 @@ export class SelectEditor extends BaseEditor {
    */
   close() {
     this._opened = false;
-    this.select.style.display = 'none';
+    this.selectWrapper.style.display = 'none';
 
-    if (hasClass(this.select, EDITOR_VISIBLE_CLASS_NAME)) {
-      removeClass(this.select, EDITOR_VISIBLE_CLASS_NAME);
+    if (hasClass(this.selectWrapper, EDITOR_VISIBLE_CLASS_NAME)) {
+      removeClass(this.selectWrapper, EDITOR_VISIBLE_CLASS_NAME);
     }
 
     this.unregisterShortcuts();
@@ -109,7 +127,7 @@ export class SelectEditor extends BaseEditor {
    * @param {number|string} prop The column property (passed when datasource is an array of objects).
    * @param {HTMLTableCellElement} td The rendered cell element.
    * @param {*} value The rendered value.
-   * @param {object} cellProperties The cell meta object ({@see Core#getCellMeta}).
+   * @param {object} cellProperties The cell meta object (see {@link Core#getCellMeta}).
    */
   prepare(row, col, prop, td, value, cellProperties) {
     super.prepare(row, col, prop, td, value, cellProperties);
@@ -196,7 +214,7 @@ export class SelectEditor extends BaseEditor {
       width,
       height,
     } = this.getEditedCellRect();
-    const selectStyle = this.select.style;
+    const selectStyle = this.selectWrapper.style;
 
     selectStyle.height = `${height}px`;
     selectStyle.width = `${width}px`;
@@ -204,7 +222,7 @@ export class SelectEditor extends BaseEditor {
     selectStyle[this.hot.isRtl() ? 'right' : 'left'] = `${start}px`;
     selectStyle.margin = '0px';
 
-    addClass(this.select, EDITOR_VISIBLE_CLASS_NAME);
+    addClass(this.selectWrapper, EDITOR_VISIBLE_CLASS_NAME);
   }
 
   /**
@@ -215,35 +233,32 @@ export class SelectEditor extends BaseEditor {
   registerShortcuts() {
     const shortcutManager = this.hot.getShortcutManager();
     const editorContext = shortcutManager.getContext('editor');
-
     const contextConfig = {
       group: SHORTCUTS_GROUP,
     };
 
-    // Actions from fast edit works.
-    if (this.isInFullEditMode() === false) {
-      return;
+    if (this.isInFullEditMode()) {
+      // The arrow-related shortcuts should work only in full edit mode.
+      editorContext.addShortcuts([{
+        keys: [['ArrowUp']],
+        callback: () => {
+          const previousOptionIndex = this.select.selectedIndex - 1;
+
+          if (previousOptionIndex >= 0) {
+            this.select[previousOptionIndex].selected = true;
+          }
+        },
+      }, {
+        keys: [['ArrowDown']],
+        callback: () => {
+          const nextOptionIndex = this.select.selectedIndex + 1;
+
+          if (nextOptionIndex <= this.select.length - 1) {
+            this.select[nextOptionIndex].selected = true;
+          }
+        }
+      }], contextConfig);
     }
-
-    editorContext.addShortcuts([{
-      keys: [['ArrowUp']],
-      callback: () => {
-        const previousOptionIndex = this.select.selectedIndex - 1;
-
-        if (previousOptionIndex >= 0) {
-          this.select[previousOptionIndex].selected = true;
-        }
-      },
-    }, {
-      keys: [['ArrowDown']],
-      callback: () => {
-        const nextOptionIndex = this.select.selectedIndex + 1;
-
-        if (nextOptionIndex <= this.select.length - 1) {
-          this.select[nextOptionIndex].selected = true;
-        }
-      }
-    }], contextConfig);
   }
 
   /**

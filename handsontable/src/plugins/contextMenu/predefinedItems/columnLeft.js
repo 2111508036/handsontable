@@ -1,4 +1,3 @@
-import { getValidSelection } from '../utils';
 import * as C from '../../../i18n/constants';
 
 export const KEY = 'col_left';
@@ -23,21 +22,23 @@ export default function columnLeftItem() {
         return true;
       }
 
-      const selected = getValidSelection(this);
+      const range = this.getSelectedRangeLast();
 
-      if (!selected) {
+      if (
+        !range ||
+        this.selection.isSelectedByRowHeader() ||
+        (range.isSingleHeader() && range.highlight.col < 0) ||
+        (this.countSourceCols() >= this.getSettings().maxCols)
+      ) {
         return true;
       }
 
       if (this.selection.isSelectedByCorner()) {
-        const totalColumns = this.countCols();
-
         // Enable "Insert column left" only when there is at least one column.
-        return totalColumns === 0;
+        return this.countCols() === 0;
       }
 
-      return this.selection.isSelectedByRowHeader() ||
-        this.countCols() >= this.getSettings().maxCols;
+      return false;
     },
     hidden() {
       return !this.getSettings().allowInsertColumn;

@@ -1,5 +1,12 @@
-import { SharedOrderView } from './../utils/orderView';
-import BaseRenderer from './_base';
+import { SharedOrderView } from '../utils/orderView';
+import { BaseRenderer } from './_base';
+import { setAttribute, removeAttribute } from '../../../../helpers/dom/element';
+import {
+  A11Y_COLINDEX,
+  A11Y_ROWHEADER,
+  A11Y_SCOPE_ROW,
+  A11Y_TABINDEX
+} from '../../../../helpers/a11y';
 
 /**
  * Row headers renderer responsible for managing (inserting, tracking, rendering) TR elements belongs to TR.
@@ -14,21 +21,22 @@ import BaseRenderer from './_base';
  *
  * @class {CellsRenderer}
  */
-export default class RowHeadersRenderer extends BaseRenderer {
+export class RowHeadersRenderer extends BaseRenderer {
+  /**
+   * Cache for OrderView classes connected to specified node.
+   *
+   * @type {WeakMap}
+   */
+  orderViews = new WeakMap();
+  /**
+   * Row index which specifies the row position of the processed row header.
+   *
+   * @type {number}
+   */
+  sourceRowIndex = 0;
+
   constructor() {
     super('TH');
-    /**
-     * Cache for OrderView classes connected to specified node.
-     *
-     * @type {WeakMap}
-     */
-    this.orderViews = new WeakMap();
-    /**
-     * Row index which specifies the row position of the processed row header.
-     *
-     * @type {number}
-     */
-    this.sourceRowIndex = 0;
   }
 
   /**
@@ -46,7 +54,6 @@ export default class RowHeadersRenderer extends BaseRenderer {
       orderView = new SharedOrderView(
         rootNode,
         sourceColumnIndex => this.nodesPool.obtain(this.sourceRowIndex, sourceColumnIndex),
-        this.nodeType,
       );
       this.orderViews.set(rootNode, orderView);
     }
@@ -72,7 +79,7 @@ export default class RowHeadersRenderer extends BaseRenderer {
       orderView
         .appendView(cellsView)
         .setSize(rowHeadersCount)
-        .setOffset(this.table.renderedColumnToSource(0))
+        .setOffset(0)
         .start();
 
       for (let visibleColumnIndex = 0; visibleColumnIndex < rowHeadersCount; visibleColumnIndex++) {
@@ -82,6 +89,21 @@ export default class RowHeadersRenderer extends BaseRenderer {
 
         TH.className = '';
         TH.removeAttribute('style');
+
+        // Remove all accessibility-related attributes for the header to start fresh.
+        removeAttribute(TH, [
+          new RegExp('aria-(.*)'),
+          new RegExp('role')
+        ]);
+
+        if (this.table.isAriaEnabled()) {
+          setAttribute(TH, [
+            A11Y_ROWHEADER(),
+            A11Y_SCOPE_ROW(),
+            A11Y_COLINDEX(visibleColumnIndex + 1),
+            A11Y_TABINDEX(-1)
+          ]);
+        }
 
         rowHeaderFunctions[visibleColumnIndex](sourceRowIndex, TH, visibleColumnIndex);
       }

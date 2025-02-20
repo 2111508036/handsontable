@@ -42,13 +42,23 @@ describe('BaseEditor API (RTL mode)', () => {
 
             selectCell(0, 0);
 
-            expect(getActiveEditor().getEditedCellRect()).toEqual({
-              start: 0,
-              top: 0,
-              width: 50,
-              maxWidth: 285,
-              height: 24,
-              maxHeight: 185,
+            expect(getActiveEditor().getEditedCellRect()).forThemes(({ classic, main }) => {
+              classic.toEqual({
+                start: 0,
+                top: 0,
+                width: 50,
+                maxWidth: 285,
+                height: 24,
+                maxHeight: 185,
+              });
+              main.toEqual({
+                start: 0,
+                top: 0,
+                width: 50,
+                maxWidth: 285,
+                height: 30,
+                maxHeight: 185,
+              });
             });
           });
 
@@ -62,13 +72,23 @@ describe('BaseEditor API (RTL mode)', () => {
 
             selectCell(0, 0);
 
-            expect(getActiveEditor().getEditedCellRect()).toEqual({
-              start: 0,
-              top: 0,
-              width: 50,
-              maxWidth: document.documentElement.clientWidth,
-              height: 24,
-              maxHeight: document.documentElement.clientHeight,
+            expect(getActiveEditor().getEditedCellRect()).forThemes(({ classic, main }) => {
+              classic.toEqual({
+                start: 0,
+                top: 0,
+                width: 50,
+                maxWidth: document.documentElement.clientWidth,
+                height: 24,
+                maxHeight: document.documentElement.clientHeight,
+              });
+              main.toEqual({
+                start: 0,
+                top: 0,
+                width: 51,
+                maxWidth: document.documentElement.clientWidth,
+                height: 30,
+                maxHeight: document.documentElement.clientHeight,
+              });
             });
           });
         });
@@ -84,17 +104,32 @@ describe('BaseEditor API (RTL mode)', () => {
               fixedRowsTop: 2,
             });
 
-            scrollViewportTo(countRows() - 1, countCols() - 1);
+            scrollViewportTo({
+              row: countRows() - 1,
+              col: countCols() - 1,
+              verticalSnap: 'top',
+              horizontalSnap: 'start',
+            });
             selectCell(1, countRows() - 1);
 
-            expect(getActiveEditor().getEditedCellRect()).toEqual(jasmine.objectContaining({
-              start: 234,
-              top: 23,
-              width: 51,
-              maxWidth: 51,
-              height: 24,
-              // maxHeight: ?, // returns wrong value! it will be fixed within #9206
-            }));
+            expect(getActiveEditor().getEditedCellRect()).forThemes(({ classic, main }) => {
+              classic.toEqual(jasmine.objectContaining({
+                start: 234,
+                top: 23,
+                width: 51,
+                maxWidth: 51,
+                height: 24,
+                // maxHeight: ?, // returns wrong value! it will be fixed within #9206
+              }));
+              main.toEqual(jasmine.objectContaining({
+                start: 234,
+                top: 29,
+                width: 51,
+                maxWidth: 51,
+                height: 30,
+                // maxHeight: ?, // returns wrong value! it will be fixed within #9206
+              }));
+            });
           });
 
           it('and the scrollable element is the Window object', async() => {
@@ -111,19 +146,36 @@ describe('BaseEditor API (RTL mode)', () => {
               fixedRowsTop: 2,
             });
 
-            scrollViewportTo(countRows() - 1, countCols() - 1);
+            scrollViewportTo({
+              row: countRows() - 1,
+              col: countCols() - 1,
+              verticalSnap: 'top',
+              horizontalSnap: 'start',
+            });
             selectCell(1, countCols() - 1);
 
             await sleep(100);
 
-            expect(getActiveEditor().getEditedCellRect()).toEqual(jasmine.objectContaining({
-              start: Math.abs(document.documentElement.scrollLeft) + document.documentElement.clientWidth - 50, // 50 - the width of the first cell
-              top: document.documentElement.offsetHeight - document.documentElement.clientHeight + 23,
-              width: 51,
-              maxWidth: 50,
-              height: 24,
-              // maxHeight: ?, // returns wrong value! it will be fixed within #9206
-            }));
+            expect(getActiveEditor().getEditedCellRect()).forThemes(({ classic, main }) => {
+              classic.toEqual(jasmine.objectContaining({
+                start: Math.abs(document.documentElement.scrollLeft) + document.documentElement.clientWidth - 51, // 51 - the width of the first cell
+                top: document.documentElement.offsetHeight - document.documentElement.clientHeight + 23,
+                width: 51,
+                maxWidth: 51,
+                height: 24,
+                // maxHeight: ?, // returns wrong value! it will be fixed within #9206
+              }));
+
+              // Not sure about the values below - can be modified if found they're wrong (implemented after introducing the new themes).
+              main.toEqual(jasmine.objectContaining({
+                start: Math.abs(document.documentElement.scrollLeft) + document.documentElement.clientWidth - 62,
+                top: document.documentElement.offsetHeight - document.documentElement.clientHeight + 29,
+                width: 62,
+                maxWidth: 62,
+                height: 30,
+                // maxHeight: ?, // returns wrong value! it will be fixed within #9206
+              }));
+            });
           });
         });
 
@@ -141,13 +193,23 @@ describe('BaseEditor API (RTL mode)', () => {
 
             selectCell(0, 0);
 
-            expect(getActiveEditor().getEditedCellRect()).toEqual({
-              start: 0,
-              top: 0,
-              width: 50,
-              maxWidth: 285,
-              height: 24,
-              maxHeight: 185,
+            expect(getActiveEditor().getEditedCellRect()).forThemes(({ classic, main }) => {
+              classic.toEqual({
+                start: 0,
+                top: 0,
+                width: 50,
+                maxWidth: 285,
+                height: 24,
+                maxHeight: 185,
+              });
+              main.toEqual({
+                start: 0,
+                top: 0,
+                width: 50,
+                maxWidth: 285,
+                height: 30,
+                maxHeight: 185,
+              });
             });
           });
 
@@ -162,13 +224,23 @@ describe('BaseEditor API (RTL mode)', () => {
 
             selectCell(0, 0);
 
-            expect(getActiveEditor().getEditedCellRect()).toEqual({
-              start: 0,
-              top: 0,
-              width: 50,
-              maxWidth: document.documentElement.clientWidth,
-              height: 24,
-              maxHeight: document.documentElement.clientHeight,
+            expect(getActiveEditor().getEditedCellRect()).forThemes(({ classic, main }) => {
+              classic.toEqual({
+                start: 0,
+                top: 0,
+                width: 50,
+                maxWidth: document.documentElement.clientWidth,
+                height: 24,
+                maxHeight: document.documentElement.clientHeight,
+              });
+              main.toEqual({
+                start: 0,
+                top: 0,
+                width: 51,
+                maxWidth: document.documentElement.clientWidth,
+                height: 30,
+                maxHeight: document.documentElement.clientHeight,
+              });
             });
           });
         });
@@ -185,17 +257,32 @@ describe('BaseEditor API (RTL mode)', () => {
               fixedRowsTop: 2,
             });
 
-            scrollViewportTo(countRows() - 1, countCols() - 1);
+            scrollViewportTo({
+              row: countRows() - 1,
+              col: countCols() - 1,
+              verticalSnap: 'top',
+              horizontalSnap: 'start',
+            });
             selectCell(1, 1);
 
-            expect(getActiveEditor().getEditedCellRect()).toEqual(jasmine.objectContaining({
-              start: 49,
-              top: 23,
-              width: 51,
-              // maxWidth: ?, // returns wrong value! it will be fixed within #9206
-              height: 24,
-              // maxHeight: ?, // returns wrong value! it will be fixed within #9206
-            }));
+            expect(getActiveEditor().getEditedCellRect()).forThemes(({ classic, main }) => {
+              classic.toEqual(jasmine.objectContaining({
+                start: 49,
+                top: 23,
+                width: 51,
+                // maxWidth: ?, // returns wrong value! it will be fixed within #9206
+                height: 24,
+                // maxHeight: ?, // returns wrong value! it will be fixed within #9206
+              }));
+              main.toEqual(jasmine.objectContaining({
+                start: 49,
+                top: 29,
+                width: 51,
+                // maxWidth: ?, // returns wrong value! it will be fixed within #9206
+                height: 30,
+                // maxHeight: ?, // returns wrong value! it will be fixed within #9206
+              }));
+            });
           });
 
           it('and the scrollable element is the Window object', () => {
@@ -207,17 +294,32 @@ describe('BaseEditor API (RTL mode)', () => {
               fixedRowsTop: 2,
             });
 
-            scrollViewportTo(countRows() - 1, countCols() - 1);
+            scrollViewportTo({
+              row: countRows() - 1,
+              col: countCols() - 1,
+              verticalSnap: 'top',
+              horizontalSnap: 'start',
+            });
             selectCell(1, 1);
 
-            expect(getActiveEditor().getEditedCellRect()).toEqual(jasmine.objectContaining({
-              start: Math.abs(document.documentElement.scrollLeft) + 49, // 49 - the width of the first cell
-              top: document.documentElement.offsetHeight - document.documentElement.clientHeight + 23,
-              width: 51,
-              // maxWidth: ?, // returns wrong value! it will be fixed within #9206
-              height: 24,
-              // maxHeight: ?, // returns wrong value! it will be fixed within #9206
-            }));
+            expect(getActiveEditor().getEditedCellRect()).forThemes(({ classic, main }) => {
+              classic.toEqual(jasmine.objectContaining({
+                start: Math.abs(document.documentElement.scrollLeft) + 49, // 49 - the width of the first cell
+                top: document.documentElement.offsetHeight - document.documentElement.clientHeight + 23,
+                width: 51,
+                // maxWidth: ?, // returns wrong value! it will be fixed within #9206
+                height: 24,
+                // maxHeight: ?, // returns wrong value! it will be fixed within #9206
+              }));
+              main.toEqual(jasmine.objectContaining({
+                start: Math.abs(document.documentElement.scrollLeft) + 50,
+                top: document.documentElement.offsetHeight - document.documentElement.clientHeight + 29,
+                width: 52,
+                // maxWidth: ?, // returns wrong value! it will be fixed within #9206
+                height: 30,
+                // maxHeight: ?, // returns wrong value! it will be fixed within #9206
+              }));
+            });
           });
         });
 
@@ -234,13 +336,23 @@ describe('BaseEditor API (RTL mode)', () => {
 
             selectCell(0, 0);
 
-            expect(getActiveEditor().getEditedCellRect()).toEqual({
-              start: 0,
-              top: 0,
-              width: 50,
-              maxWidth: 285,
-              height: 24,
-              maxHeight: 185,
+            expect(getActiveEditor().getEditedCellRect()).forThemes(({ classic, main }) => {
+              classic.toEqual({
+                start: 0,
+                top: 0,
+                width: 50,
+                maxWidth: 285,
+                height: 24,
+                maxHeight: 185,
+              });
+              main.toEqual({
+                start: 0,
+                top: 0,
+                width: 50,
+                maxWidth: 285,
+                height: 30,
+                maxHeight: 185,
+              });
             });
           });
 
@@ -254,13 +366,23 @@ describe('BaseEditor API (RTL mode)', () => {
 
             selectCell(0, 0);
 
-            expect(getActiveEditor().getEditedCellRect()).toEqual({
-              start: 0,
-              top: 0,
-              width: 50,
-              maxWidth: document.documentElement.clientWidth,
-              height: 24,
-              maxHeight: document.documentElement.clientHeight,
+            expect(getActiveEditor().getEditedCellRect()).forThemes(({ classic, main }) => {
+              classic.toEqual({
+                start: 0,
+                top: 0,
+                width: 50,
+                maxWidth: document.documentElement.clientWidth,
+                height: 24,
+                maxHeight: document.documentElement.clientHeight,
+              });
+              main.toEqual({
+                start: 0,
+                top: 0,
+                width: 51,
+                maxWidth: document.documentElement.clientWidth,
+                height: 30,
+                maxHeight: document.documentElement.clientHeight,
+              });
             });
           });
         });
@@ -276,17 +398,32 @@ describe('BaseEditor API (RTL mode)', () => {
               fixedColumnsStart: 2,
             });
 
-            scrollViewportTo(countRows() - 1, countCols() - 1);
+            scrollViewportTo({
+              row: countRows() - 1,
+              col: countCols() - 1,
+              verticalSnap: 'top',
+              horizontalSnap: 'start',
+            });
             selectCell(countRows() - 1, 1);
 
-            expect(getActiveEditor().getEditedCellRect()).toEqual(jasmine.objectContaining({
-              start: 49,
-              top: 161,
-              width: 51,
-              // maxWidth: ?, // returns wrong value! it will be fixed within #9206
-              height: 24,
-              maxHeight: 24,
-            }));
+            expect(getActiveEditor().getEditedCellRect()).forThemes(({ classic, main }) => {
+              classic.toEqual(jasmine.objectContaining({
+                start: 49,
+                top: 161,
+                width: 51,
+                // maxWidth: ?, // returns wrong value! it will be fixed within #9206
+                height: 24,
+                maxHeight: 24,
+              }));
+              main.toEqual(jasmine.objectContaining({
+                start: 49,
+                top: 155,
+                width: 51,
+                // maxWidth: ?, // returns wrong value! it will be fixed within #9206
+                height: 30,
+                maxHeight: 30,
+              }));
+            });
           });
 
           it('and the scrollable element is the Window object', () => {
@@ -297,17 +434,32 @@ describe('BaseEditor API (RTL mode)', () => {
               fixedColumnsStart: 2,
             });
 
-            scrollViewportTo(countRows() - 1, countCols() - 1);
+            scrollViewportTo({
+              row: countRows() - 1,
+              col: countCols() - 1,
+              verticalSnap: 'top',
+              horizontalSnap: 'start',
+            });
             selectCell(countRows() - 1, 1);
 
-            expect(getActiveEditor().getEditedCellRect()).toEqual(jasmine.objectContaining({
-              start: Math.abs(document.documentElement.scrollLeft) + 49, // 49 - the width of the first cell
-              top: document.documentElement.offsetHeight - 24, // 24 - the height of the last cell
-              width: 51,
-              // maxWidth: ?, // returns wrong value! it will be fixed within #9206
-              height: 24,
-              maxHeight: 24,
-            }));
+            expect(getActiveEditor().getEditedCellRect()).forThemes(({ classic, main }) => {
+              classic.toEqual(jasmine.objectContaining({
+                start: Math.abs(document.documentElement.scrollLeft) + 49, // 49 - the width of the first cell
+                top: document.documentElement.offsetHeight - 24, // 24 - the height of the last cell
+                width: 51,
+                // maxWidth: ?, // returns wrong value! it will be fixed within #9206
+                height: 24,
+                maxHeight: 24,
+              }));
+              main.toEqual(jasmine.objectContaining({
+                start: Math.abs(document.documentElement.scrollLeft) + 50,
+                top: document.documentElement.offsetHeight - 30,
+                width: 52,
+                // maxWidth: ?, // returns wrong value! it will be fixed within #9206
+                height: 30,
+                maxHeight: 30,
+              }));
+            });
           });
         });
 
@@ -325,14 +477,24 @@ describe('BaseEditor API (RTL mode)', () => {
 
             selectCell(8, 0);
 
-            expect(getActiveEditor().getEditedCellRect()).toEqual(jasmine.objectContaining({
-              start: 0,
-              top: 138,
-              width: 50,
-              maxWidth: 285,
-              height: 24,
-              // maxHeight: ?, // returns wrong value! it will be fixed within #9206
-            }));
+            expect(getActiveEditor().getEditedCellRect()).forThemes(({ classic, main }) => {
+              classic.toEqual(jasmine.objectContaining({
+                start: 0,
+                top: 138,
+                width: 50,
+                maxWidth: 285,
+                height: 24,
+                // maxHeight: ?, // returns wrong value! it will be fixed within #9206
+              }));
+              main.toEqual(jasmine.objectContaining({
+                start: 0,
+                top: 126,
+                width: 50,
+                maxWidth: 285,
+                height: 30,
+                // maxHeight: ?, // returns wrong value! it will be fixed within #9206
+              }));
+            });
           });
 
           it('and the scrollable element is the Window object', () => {
@@ -346,14 +508,24 @@ describe('BaseEditor API (RTL mode)', () => {
 
             selectCell(countRows() - 2, 0);
 
-            expect(getActiveEditor().getEditedCellRect()).toEqual(jasmine.objectContaining({
-              start: 0,
-              top: document.documentElement.clientHeight - 47, // 47 - height of the 2 last rows,
-              width: 50,
-              maxWidth: document.documentElement.clientWidth,
-              height: 24,
-              // maxHeight: ?, // returns wrong value! it will be fixed within #9206
-            }));
+            expect(getActiveEditor().getEditedCellRect()).forThemes(({ classic, main }) => {
+              classic.toEqual(jasmine.objectContaining({
+                start: 0,
+                top: document.documentElement.clientHeight - 47, // 47 - height of the 2 last rows,
+                width: 50,
+                maxWidth: document.documentElement.clientWidth,
+                height: 24,
+                // maxHeight: ?, // returns wrong value! it will be fixed within #9206
+              }));
+              main.toEqual(jasmine.objectContaining({
+                start: 0,
+                top: document.documentElement.clientHeight - 59,
+                width: 51,
+                maxWidth: document.documentElement.clientWidth,
+                height: 30,
+                // maxHeight: ?, // returns wrong value! it will be fixed within #9206
+              }));
+            });
           });
         });
 
@@ -369,17 +541,32 @@ describe('BaseEditor API (RTL mode)', () => {
               fixedRowsBottom: 2,
             });
 
-            scrollViewportTo(countRows() - 1, countCols() - 1);
+            scrollViewportTo({
+              row: countRows() - 1,
+              col: countCols() - 1,
+              verticalSnap: 'top',
+              horizontalSnap: 'start',
+            });
             selectCell(countRows() - 2, 0);
 
-            expect(getActiveEditor().getEditedCellRect()).toEqual(jasmine.objectContaining({
-              start: 0,
-              top: 138,
-              width: 50,
-              // maxWidth: ?, // returns wrong value! it will be fixed within #9206
-              height: 24,
-              // maxHeight: ?, // returns wrong value! it will be fixed within #9206
-            }));
+            expect(getActiveEditor().getEditedCellRect()).forThemes(({ classic, main }) => {
+              classic.toEqual(jasmine.objectContaining({
+                start: 0,
+                top: 138,
+                width: 50,
+                // maxWidth: ?, // returns wrong value! it will be fixed within #9206
+                height: 24,
+                // maxHeight: ?, // returns wrong value! it will be fixed within #9206
+              }));
+              main.toEqual(jasmine.objectContaining({
+                start: 0,
+                top: 126,
+                width: 50,
+                // maxWidth: ?, // returns wrong value! it will be fixed within #9206
+                height: 30,
+                // maxHeight: ?, // returns wrong value! it will be fixed within #9206
+              }));
+            });
           });
 
           it('and the scrollable element is the Window object', () => {
@@ -391,17 +578,32 @@ describe('BaseEditor API (RTL mode)', () => {
               fixedRowsBottom: 2,
             });
 
-            scrollViewportTo(countRows() - 1, countCols() - 1);
+            scrollViewportTo({
+              row: countRows() - 1,
+              col: countCols() - 1,
+              verticalSnap: 'top',
+              horizontalSnap: 'start',
+            });
             selectCell(countRows() - 2, 0);
 
-            expect(getActiveEditor().getEditedCellRect()).toEqual(jasmine.objectContaining({
-              start: Math.abs(document.documentElement.scrollLeft),
-              top: document.documentElement.offsetHeight - 47,
-              width: 50,
-              // maxWidth: ?, // returns wrong value! it will be fixed within #9206
-              height: 24,
-              // maxHeight: ?, // returns wrong value! it will be fixed within #9206
-            }));
+            expect(getActiveEditor().getEditedCellRect()).forThemes(({ classic, main }) => {
+              classic.toEqual(jasmine.objectContaining({
+                start: Math.abs(document.documentElement.scrollLeft),
+                top: document.documentElement.offsetHeight - 47,
+                width: 50,
+                // maxWidth: ?, // returns wrong value! it will be fixed within #9206
+                height: 24,
+                // maxHeight: ?, // returns wrong value! it will be fixed within #9206
+              }));
+              main.toEqual(jasmine.objectContaining({
+                start: Math.abs(document.documentElement.scrollLeft),
+                top: document.documentElement.offsetHeight - 60,
+                width: 51,
+                // maxWidth: ?, // returns wrong value! it will be fixed within #9206
+                height: 30,
+                // maxHeight: ?, // returns wrong value! it will be fixed within #9206
+              }));
+            });
           });
         });
 
@@ -418,14 +620,24 @@ describe('BaseEditor API (RTL mode)', () => {
 
             selectCell(countRows() - 2, 0);
 
-            expect(getActiveEditor().getEditedCellRect()).toEqual(jasmine.objectContaining({
-              start: 0,
-              top: 138,
-              width: 50,
-              maxWidth: 285,
-              height: 24,
-              // maxHeight: ?, // returns wrong value! it will be fixed within #9206
-            }));
+            expect(getActiveEditor().getEditedCellRect()).forThemes(({ classic, main }) => {
+              classic.toEqual(jasmine.objectContaining({
+                start: 0,
+                top: 138,
+                width: 50,
+                maxWidth: 285,
+                height: 24,
+                // maxHeight: ?, // returns wrong value! it will be fixed within #9206
+              }));
+              main.toEqual(jasmine.objectContaining({
+                start: 0,
+                top: 126,
+                width: 50,
+                maxWidth: 285,
+                height: 30,
+                // maxHeight: ?, // returns wrong value! it will be fixed within #9206
+              }));
+            });
           });
 
           it('and the scrollable element is the Window object', () => {
@@ -438,14 +650,24 @@ describe('BaseEditor API (RTL mode)', () => {
 
             selectCell(countRows() - 2, 0);
 
-            expect(getActiveEditor().getEditedCellRect()).toEqual(jasmine.objectContaining({
-              start: 0,
-              top: document.documentElement.clientHeight - 47, // 47 - height of the 2 last rows
-              width: 50,
-              maxWidth: document.documentElement.clientWidth,
-              height: 24,
-              // maxHeight: ?, // returns wrong value! it will be fixed within #9206
-            }));
+            expect(getActiveEditor().getEditedCellRect()).forThemes(({ classic, main }) => {
+              classic.toEqual(jasmine.objectContaining({
+                start: 0,
+                top: document.documentElement.clientHeight - 47, // 47 - height of the 2 last rows
+                width: 50,
+                maxWidth: document.documentElement.clientWidth,
+                height: 24,
+                // maxHeight: ?, // returns wrong value! it will be fixed within #9206
+              }));
+              main.toEqual(jasmine.objectContaining({
+                start: 0,
+                top: document.documentElement.clientHeight - 59,
+                width: 51,
+                maxWidth: document.documentElement.clientWidth,
+                height: 30,
+                // maxHeight: ?, // returns wrong value! it will be fixed within #9206
+              }));
+            });
           });
         });
 
@@ -460,17 +682,32 @@ describe('BaseEditor API (RTL mode)', () => {
               fixedRowsBottom: 2,
             });
 
-            scrollViewportTo(countRows() - 1, countCols() - 1);
+            scrollViewportTo({
+              row: countRows() - 1,
+              col: countCols() - 1,
+              verticalSnap: 'top',
+              horizontalSnap: 'start',
+            });
             selectCell(countRows() - 1, countCols() - 1);
 
-            expect(getActiveEditor().getEditedCellRect()).toEqual(jasmine.objectContaining({
-              start: 234,
-              top: 161,
-              width: 51,
-              maxWidth: 51,
-              height: 24,
-              // maxHeight: ?, // returns wrong value! it will be fixed within #9206
-            }));
+            expect(getActiveEditor().getEditedCellRect()).forThemes(({ classic, main }) => {
+              classic.toEqual(jasmine.objectContaining({
+                start: 234,
+                top: 161,
+                width: 51,
+                maxWidth: 51,
+                height: 24,
+                // maxHeight: ?, // returns wrong value! it will be fixed within #9206
+              }));
+              main.toEqual(jasmine.objectContaining({
+                start: 234,
+                top: 155,
+                width: 51,
+                maxWidth: 51,
+                height: 30,
+                // maxHeight: ?, // returns wrong value! it will be fixed within #9206
+              }));
+            });
           });
 
           it('and the scrollable element is the Window object', () => {
@@ -490,17 +727,34 @@ describe('BaseEditor API (RTL mode)', () => {
               autoColumnSize: false
             });
 
-            scrollViewportTo(countRows() - 1, countCols() - 1);
+            scrollViewportTo({
+              row: countRows() - 1,
+              col: countCols() - 1,
+              verticalSnap: 'top',
+              horizontalSnap: 'start',
+            });
             selectCell(countRows() - 1, countCols() - 1);
 
-            expect(getActiveEditor().getEditedCellRect()).toEqual(jasmine.objectContaining({
-              start: 4949,
-              top: document.documentElement.offsetHeight - 24,
-              width: 51,
-              maxWidth: 51,
-              height: 24,
-              // maxHeight: ?, // returns wrong value! it will be fixed within #9206
-            }));
+            expect(getActiveEditor().getEditedCellRect()).forThemes(({ classic, main }) => {
+              classic.toEqual(jasmine.objectContaining({
+                start: 4949,
+                top: document.documentElement.offsetHeight - 24,
+                width: 51,
+                maxWidth: 51,
+                height: 24,
+                // maxHeight: ?, // returns wrong value! it will be fixed within #9206
+              }));
+
+              // Not sure about the values below - can be modified if found they're wrong (implemented after introducing the new themes).
+              main.toEqual(jasmine.objectContaining({
+                start: 4949,
+                top: document.documentElement.offsetHeight - 31,
+                width: 51,
+                maxWidth: 51,
+                height: 30,
+                // maxHeight: ?, // returns wrong value! it will be fixed within #9206
+              }));
+            });
           });
         });
       });

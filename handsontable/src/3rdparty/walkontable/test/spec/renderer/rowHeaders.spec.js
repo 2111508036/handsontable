@@ -9,6 +9,10 @@ describe('Walkontable.Renderer.RowHeadersRenderer', () => {
     renderedColumnToSource(visibleColumnIndex) {
       return visibleColumnIndex;
     }
+
+    isAriaEnabled() {
+      return true;
+    }
   }
 
   function createRenderer() {
@@ -78,14 +82,14 @@ describe('Walkontable.Renderer.RowHeadersRenderer', () => {
     expect(rootNode.outerHTML).toMatchHTML(`
       <tbody>
         <tr>
-          <th class=""></th>
-          <td class=""></td>
-          <td class=""></td>
+          <th></th>
+          <td></td>
+          <td></td>
         </tr>
         <tr>
-          <th class=""></th>
-          <td class=""></td>
-          <td class=""></td>
+          <th></th>
+          <td></td>
+          <td></td>
         </tr>
       </tbody>
       `);
@@ -137,14 +141,14 @@ describe('Walkontable.Renderer.RowHeadersRenderer', () => {
     expect(rootNode.outerHTML).toMatchHTML(`
       <tbody>
         <tr>
-          <th class=""></th>
-          <td class=""></td>
-          <td class=""></td>
+          <th></th>
+          <td></td>
+          <td></td>
         </tr>
         <tr>
-          <th class=""></th>
-          <td class=""></td>
-          <td class=""></td>
+          <th></th>
+          <td></td>
+          <td></td>
         </tr>
       </tbody>
       `);
@@ -175,14 +179,14 @@ describe('Walkontable.Renderer.RowHeadersRenderer', () => {
     expect(rootNode.outerHTML).toMatchHTML(`
       <tbody>
         <tr>
-          <th class=""></th>
-          <td class=""></td>
-          <td class=""></td>
+          <th></th>
+          <td></td>
+          <td></td>
         </tr>
         <tr>
-          <th class=""></th>
-          <td class=""></td>
-          <td class=""></td>
+          <th></th>
+          <td></td>
+          <td></td>
         </tr>
       </tbody>
       `);

@@ -1,3 +1,4 @@
+/* eslint-disable jsdoc/require-description-complete-sentence */
 import { generateASCIITable } from './asciiTable';
 import { normalize, pretty } from './htmlNormalize';
 
@@ -46,6 +47,61 @@ beforeEach(function() {
     return currentSpec.$container.data('handsontable');
   }
 
+  /**
+   * Extend the matcher factories with the `matchersUtil` argument extended with a configuration provided in the
+   * spec as:
+   * ```.
+   * spec().matchersConfig['matcherName'] = {
+   *   configItem: true,
+   *   // ...
+   * }
+   * ```.
+   *
+   * @param {object} matchers The object containing custom matcher factories.
+   * @returns {object}
+   */
+  function extendMatchersWithConfig(matchers) {
+    Object.keys(matchers).forEach((matcherName) => {
+      const matcherFactory = matchers[matcherName];
+
+      matchers[matcherName] = function(matchersUtil) {
+        if (matchersUtil && currentSpec.matchersConfig?.[matcherName]) {
+          matchersUtil.matcherConfig = currentSpec.matchersConfig[matcherName];
+        }
+
+        matchersUtil.customMatchers = matchers;
+
+        return matcherFactory(matchersUtil);
+      };
+    });
+
+    return matchers;
+  }
+
+  /**
+   * Modify the matchers configuration to match the one used in Jest.
+   * This allows sharing matchers between unit and e2e tests.
+   *
+   * @param {object} matchers The matchers object.
+   * @returns {object} A modified matchers object.
+   */
+  function modifyMatchersForJest(matchers) {
+    Object.keys(matchers).forEach((matcherName) => {
+      const jasmineMatcher = matchers[matcherName];
+
+      matchers[matcherName] = function(received, expected, ...args) {
+        const jasmineMatcherResult = jasmineMatcher().compare.call(this, received, expected, ...args);
+
+        return {
+          message: () => jasmineMatcherResult.message,
+          pass: jasmineMatcherResult.pass
+        };
+      };
+    });
+
+    return matchers;
+  }
+
   const matchers = {
     toBeInArray() {
       return {
@@ -65,6 +121,60 @@ beforeEach(function() {
         }
       };
     },
+    /**
+     * The matcher allows test the CellRange instances in more compact way. For comparison, instead of doing that:
+     * ```
+     * expect(hot.getSelectedRange()).toEqual([
+     *   {
+     *     highlight: { row: 2, col: 3 },
+     *     from: { row: 1, col: 2 },
+     *     to: { row: 4, col: 4 },
+     *   },
+     *   {
+     *     highlight: { row: 3, col: 2 },
+     *     from: { row: 3, col: 2 },
+     *     to: { row: 5, col: 5 },
+     *   },
+     * ])
+     * ```
+     * you can write something like that:
+     * ```
+     * expect(hot.getSelectedRange()).toEqualCellRange([
+     *   'highlight: 2,3 from: 1,2 to: 4,4',
+     *   'highlight: 3,2 from: 3,2 to: 5,5',
+     * ]);
+     * ```
+     * or
+     * ```
+     * expect(hot.getSelectedRangeLast()).toEqualCellRange('highlight: 3,2 from: 3,2 to: 5,5');
+     * ```
+     *
+     * @returns {object}
+     */
+    toEqualCellRange() {
+      return {
+        compare(actual, expected) {
+          const rangeToString = (range) => {
+            if (!range || !range?.highlight || !range?.from || !range?.to) {
+              return;
+            }
+
+            const { highlight: h, from, to } = range;
+
+            return `highlight: ${h.row},${h.col} from: ${from.row},${from.col} to: ${to.row},${to.col}`;
+          };
+
+          const actualPattern = Array.isArray(actual) ?
+            actual.map(range => rangeToString(range)) : rangeToString(actual);
+
+          return {
+            pass: (jasmine.matchersUtil ?? this).equals(actualPattern, expected),
+            message: `Expected \`${JSON.stringify(actualPattern)}\` to match to the \`${JSON.stringify(expected)}\`
+ cell range pattern.`,
+          };
+        }
+      };
+    },
     toBeAroundValue() {
       return {
         compare(actual, expected, diff) {
@@ -75,7 +185,7 @@ beforeEach(function() {
  and ${expected + margin})`;
 
           if (!pass) {
-            message = `Expected ${actual} NOT to be around ${expected} (between ${expected - margin}
+            message = `Expected ${actual} to be around ${expected} (between ${expected - margin}
  and ${expected + margin})`;
           }
 
@@ -86,17 +196,37 @@ beforeEach(function() {
         }
       };
     },
-    toMatchHTML() {
+    toMatchHTML(matchersUtil) {
       return {
-        compare(actual, expected) {
-          const actualHTML = pretty(normalize(actual));
+        compare(actual, expected, attributesToKeep = []) {
           const expectedHTML = pretty(normalize(expected));
+          const actualHTML = pretty(normalize(actual));
+          const actualHTMLStripped = actualHTML.replaceAll(/<\/{0,1}\w+([^>/]*)\/{0,1}>/ig, (match, attributes) => {
+            let keptAttributes = null;
+
+            if (attributesToKeep.length === 0 && matchersUtil?.matcherConfig) {
+              attributesToKeep = matchersUtil.matcherConfig.keepAttributes;
+            }
+
+            if (attributesToKeep.length) {
+              attributesToKeep = attributesToKeep.map((attribute) => {
+                // Replace * in, for example, `aria-*`.
+                return attribute.includes('*') ? attribute.replace('*', '([a-zA-Z-]+)') : attribute;
+              });
+
+              keptAttributes = attributes.match(
+                new RegExp(`(${attributesToKeep.join('|')})="([a-zA-Z0-9-_:; ]*)"`, 'ig')
+              );
+            }
+
+            return match.replace(attributes, keptAttributes ? ` ${keptAttributes.join(' ')}` : '');
+          });
 
           const result = {
-            pass: actualHTML === expectedHTML,
+            pass: actualHTMLStripped === expectedHTML,
           };
 
-          result.message = `Expected ${actualHTML} NOT to be ${expectedHTML}`;
+          result.message = `Expected: ${actualHTMLStripped} \nto equal\n ${expectedHTML}`;
 
           return result;
         }
@@ -236,7 +366,6 @@ list: ${redColor}${checkedArray.join(', ')}${resetColor} doesn't satisfy the con
         }
       };
     },
-    /* eslint-disable jsdoc/require-description-complete-sentence */
     /**
      * The matcher checks if the provided selection pattern matches to the rendered cells by checking if
      * the appropriate CSS class name was added.
@@ -273,6 +402,8 @@ list: ${redColor}${checkedArray.join(', ')}${resetColor} doesn't satisfy the con
      * 'A' - The letters (from A to H) indicates the position of the cell which contains the hidden editor
      *       (which `current` class name). The letter `A` indicates the currently selected cell with
      *       a background of the first layer and `H` as the latest layer (most dark).
+     * 'r' - The hash symbol indicates the row selection;
+     * 'c' - The hash symbol indicates the column selection;
      * '#' - The hash symbol indicates the currently selected cell without changed background color.
      *
      * The meaning of the symbol used to describe headers:
@@ -288,7 +419,6 @@ list: ${redColor}${checkedArray.join(', ')}${resetColor} doesn't satisfy the con
      *
      * @returns {object}
      */
-    /* eslint-enable jsdoc/require-description-complete-sentence */
     toBeMatchToSelectionPattern() {
       return {
         compare(actualPattern) {
@@ -331,7 +461,87 @@ match to the visual state of the rendered selection \n${asciiTable}\n`;
         }
       };
     },
+    forThemes(matchersUtil) {
+      const currentTheme = currentSpec.loadedTheme;
+      const createThemeHelper = (theme, expectationMatchers, classicThemeExpectationMatchers) => {
+        return new Proxy({}, {
+          get(_, matcher) {
+            return (...args) => {
+              if (currentTheme === theme) {
+                expectationMatchers.push([matcher, ...args]);
+              }
+
+              if (theme === 'classic') {
+                classicThemeExpectationMatchers.push([matcher, ...args]);
+              }
+            };
+          }
+        });
+      };
+      const camelCaseToSpaced = (camelCaseString) => {
+        return camelCaseString.replace(/([A-Z])/g, ' $1').toLowerCase();
+      };
+
+      return {
+        compare(actualValue, callback) {
+          const expectationMatchers = [];
+          const classicThemeExpectationMatchers = [];
+          let expectationMatcher;
+
+          callback({
+            classic: createThemeHelper('classic', expectationMatchers, classicThemeExpectationMatchers),
+            horizon: createThemeHelper('horizon', expectationMatchers, classicThemeExpectationMatchers),
+            main: createThemeHelper('main', expectationMatchers, classicThemeExpectationMatchers),
+          });
+
+          if (classicThemeExpectationMatchers.length === 0) {
+            return {
+              pass: false,
+              message: 'No expectation for the classic theme was provided. ' +
+                'Please provide an expectation for the classic theme.',
+            };
+
+          } else if (expectationMatchers.length > 1 || classicThemeExpectationMatchers.length > 1) {
+            return {
+              pass: false,
+              message: 'More than one expectation per-theme was provided. ' +
+                'Please provide only one expectation per theme.',
+            };
+          }
+
+          // If no expectation for the current theme was provided, use the classic theme expectation.
+          if (expectationMatchers.length === 0) {
+            expectationMatcher = classicThemeExpectationMatchers.pop();
+
+          } else {
+            expectationMatcher = expectationMatchers.pop();
+          }
+
+          const [matcherName, ...matcherArgs] = expectationMatcher;
+
+          const expectationResult = (
+            jasmine.matchers[matcherName] || matchersUtil.customMatchers[matcherName]
+          )(matchersUtil).compare(
+            actualValue,
+            ...matcherArgs,
+          );
+
+          return {
+            pass: expectationResult.pass,
+            // Fallback for matchers that don't provide the `message` prop (like `toBe`).
+            message:
+              expectationResult.message ||
+              `Expected ${actualValue} ${camelCaseToSpaced(matcherName)} ${expectationMatcher[1]}`,
+          };
+        },
+      };
+    },
   };
 
-  jasmine.addMatchers(matchers);
+  if (expect?.extend) { // If running Jest
+    expect.extend(modifyMatchersForJest(matchers));
+
+  } else { // If running Jasmine
+    jasmine.addMatchers(extendMatchersWithConfig(matchers));
+  }
 });

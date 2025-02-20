@@ -1,42 +1,32 @@
-import { Component, ViewEncapsulation } from "@angular/core";
+import { Component, ViewEncapsulation, CUSTOM_ELEMENTS_SCHEMA } from "@angular/core";
 import { getData } from "./utils/constants";
-import { starsRenderer } from "./renderers/stars";
-import { progressBarRenderer } from "./renderers/progressBar";
+import { HotTableModule } from '@handsontable/angular';
 
-import {
-  alignHeaders,
-  drawCheckboxInRowHeaders,
-  addClassesToRows,
-  changeCheckboxCell
-} from "./utils/hooks-callbacks";
+import { addClassesToRows } from "./utils/hooks-callbacks";
 
 @Component({
+  standalone: true,
   encapsulation: ViewEncapsulation.None,
   selector: "data-grid",
   templateUrl: "./data-grid.component.html",
-  styleUrls: ["./data-grid.scss"]
+  styleUrls: ["./data-grid.scss"],
+  imports: [HotTableModule],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class DataGridComponent {
   dataset = getData();
-  alignHeaders = alignHeaders;
-  drawCheckboxInRowHeaders = drawCheckboxInRowHeaders;
   addClassesToRows = addClassesToRows;
-  changeCheckboxCell = changeCheckboxCell;
-  progressBarRenderer = progressBarRenderer;
-  starsRenderer = starsRenderer;
   colHeaders = [
     "Company name",
     "Name",
     "Sell date",
     "In stock",
     "Qty",
-    "Progress",
-    "Rating",
     "Order ID",
-    "Country"
+    "Country",
   ];
   hiddenColumns = {
-    indicators: true
+    indicators: true,
   };
   licenseKey = "non-commercial-and-evaluation";
 }

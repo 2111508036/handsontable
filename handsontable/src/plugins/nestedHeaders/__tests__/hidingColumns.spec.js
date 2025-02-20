@@ -3,6 +3,13 @@ describe('NestedHeaders', () => {
 
   beforeEach(function() {
     this.$container = $(`<div id="${id}"></div>`).appendTo('body');
+
+    // Matchers configuration.
+    this.matchersConfig = {
+      toMatchHTML: {
+        keepAttributes: ['class', 'colspan']
+      }
+    };
   });
 
   afterEach(function() {
@@ -29,9 +36,18 @@ describe('NestedHeaders', () => {
 
       expect(extractDOMStructure(getTopClone(), getMaster())).toMatchHTML(`
         <thead>
+        <tr>
+          <th class=""></th>
+          <th class=""></th>
+          <th class=""></th>
+          <th class=""></th>
+          <th class=""></th>
+          <th class=""></th>
+          <th class=""></th>
+        </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <td class="">A1</td>
             <td class="">C1</td>
             <td class="">D1</td>
@@ -74,7 +90,7 @@ describe('NestedHeaders', () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <td class="">A1</td>
             <td class="">C1</td>
             <td class="">D1</td>
@@ -116,7 +132,7 @@ describe('NestedHeaders', () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <td class="">A1</td>
             <td class="">C1</td>
             <td class="">D1</td>
@@ -141,7 +157,7 @@ describe('NestedHeaders', () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <td class="">A1</td>
             <td class="">C1</td>
             <td class="">F1</td>
@@ -164,7 +180,7 @@ describe('NestedHeaders', () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <td class="">A1</td>
             <td class="">F1</td>
             <td class="">G1</td>
@@ -183,7 +199,7 @@ describe('NestedHeaders', () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <td class="">F1</td>
           </tr>
         </tbody>
@@ -198,7 +214,7 @@ describe('NestedHeaders', () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
           </tr>
         </tbody>
         `);
@@ -235,7 +251,7 @@ describe('NestedHeaders', () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <td class="">A1</td>
             <td class="">C1</td>
             <td class="">D1</td>
@@ -262,7 +278,7 @@ describe('NestedHeaders', () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <td class="">C1</td>
             <td class="">D1</td>
             <td class="">F1</td>
@@ -334,7 +350,7 @@ describe('NestedHeaders', () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <td class="">A1</td>
             <td class="">C1</td>
             <td class="">E1</td>
@@ -384,7 +400,7 @@ describe('NestedHeaders', () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <td class="">A1</td>
             <td class="">C1</td>
             <td class="">E1</td>
@@ -431,7 +447,7 @@ describe('NestedHeaders', () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <td class="">A1</td>
             <td class="">C1</td>
             <td class="">E1</td>
@@ -472,7 +488,7 @@ describe('NestedHeaders', () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <td class="">A1</td>
             <td class="">C1</td>
             <td class="">F1</td>
@@ -505,7 +521,7 @@ describe('NestedHeaders', () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <td class="">F1</td>
             <td class="">I1</td>
           </tr>
@@ -531,7 +547,7 @@ describe('NestedHeaders', () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <td class="">I1</td>
           </tr>
         </tbody>
@@ -552,7 +568,7 @@ describe('NestedHeaders', () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
           </tr>
         </tbody>
         `);
@@ -633,7 +649,7 @@ describe('NestedHeaders', () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <td class="">B1</td>
             <td class="">C1</td>
             <td class="">E1</td>
@@ -698,7 +714,7 @@ describe('NestedHeaders', () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <td class="">B1</td>
             <td class="">C1</td>
             <td class="">E1</td>
@@ -751,7 +767,7 @@ describe('NestedHeaders', () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <td class="">B1</td>
             <td class="">E1</td>
             <td class="">F1</td>
@@ -794,7 +810,7 @@ describe('NestedHeaders', () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <td class="">B1</td>
             <td class="">F1</td>
             <td class="">G1</td>
@@ -827,7 +843,7 @@ describe('NestedHeaders', () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <td class="">F1</td>
             <td class="">G1</td>
           </tr>
@@ -853,7 +869,7 @@ describe('NestedHeaders', () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <td class="">G1</td>
           </tr>
         </tbody>
@@ -874,7 +890,7 @@ describe('NestedHeaders', () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
           </tr>
         </tbody>
         `);
@@ -929,7 +945,7 @@ describe('NestedHeaders', () => {
             </tr>
           </thead>
           <tbody>
-            <tr>
+            <tr class="ht__row_odd">
               <td class="">B1</td>
               <td class="">C1</td>
               <td class="">E1</td>
@@ -970,7 +986,7 @@ describe('NestedHeaders', () => {
             </tr>
           </thead>
           <tbody>
-            <tr>
+            <tr class="ht__row_odd">
               <td class="">B1</td>
               <td class="">C1</td>
               <td class="">F1</td>
@@ -1006,7 +1022,7 @@ describe('NestedHeaders', () => {
             </tr>
           </thead>
           <tbody>
-            <tr>
+            <tr class="ht__row_odd">
               <td class="">C1</td>
               <td class="">F1</td>
             </tr>
@@ -1037,7 +1053,7 @@ describe('NestedHeaders', () => {
             </tr>
           </thead>
           <tbody>
-            <tr>
+            <tr class="ht__row_odd">
               <td class="">F1</td>
             </tr>
           </tbody>
@@ -1065,7 +1081,7 @@ describe('NestedHeaders', () => {
             </tr>
           </thead>
           <tbody>
-            <tr>
+            <tr class="ht__row_odd">
             </tr>
           </tbody>
           `;
@@ -1077,7 +1093,7 @@ describe('NestedHeaders', () => {
 
     it('should render the setup properly after the table being scrolled', () => {
       const hot = handsontable({
-        data: Handsontable.helper.createSpreadsheetData(10, 90),
+        data: createSpreadsheetData(10, 90),
         colHeaders: true,
         nestedHeaders: generateComplexSetup(4, 70, true),
         width: 400,
@@ -1092,8 +1108,12 @@ describe('NestedHeaders', () => {
       hidingMap.setValueAtIndex(45, true); // Hide column that contains cells AT{n}
       hot.render();
 
-      hot.scrollViewportTo(void 0, 40); // Scroll to column AP4
-      hot.render();
+      scrollViewportTo({ // Scroll to column AP4
+        col: 40,
+        verticalSnap: 'top',
+        horizontalSnap: 'start',
+      });
+      render();
 
       expect(extractDOMStructure(getTopClone(), getMaster())).toMatchHTML(`
         <thead>
@@ -1109,10 +1129,6 @@ describe('NestedHeaders', () => {
             <th class="hiddenHeader"></th>
             <th class="hiddenHeader"></th>
             <th class="hiddenHeader"></th>
-            <th class="hiddenHeader"></th>
-            <th class="hiddenHeader"></th>
-            <th class="hiddenHeader"></th>
-            <th class="">BC1</th>
           </tr>
           <tr>
             <th class="" colspan="3">AL2</th>
@@ -1126,10 +1142,6 @@ describe('NestedHeaders', () => {
             <th class="hiddenHeader"></th>
             <th class="hiddenHeader"></th>
             <th class="" colspan="4">AY2</th>
-            <th class="hiddenHeader"></th>
-            <th class="hiddenHeader"></th>
-            <th class="hiddenHeader"></th>
-            <th class="">BC2</th>
           </tr>
           <tr>
             <th class="" colspan="2">AL3</th>
@@ -1143,10 +1155,6 @@ describe('NestedHeaders', () => {
             <th class="" colspan="2">AW3</th>
             <th class="hiddenHeader"></th>
             <th class="" colspan="2">AY3</th>
-            <th class="hiddenHeader"></th>
-            <th class="" colspan="2">BA3</th>
-            <th class="hiddenHeader"></th>
-            <th class="">BC3</th>
           </tr>
           <tr>
             <th class="">AL4</th>
@@ -1160,14 +1168,10 @@ describe('NestedHeaders', () => {
             <th class="">AW4</th>
             <th class="">AX4</th>
             <th class="">AY4</th>
-            <th class="">AZ4</th>
-            <th class="">BA4</th>
-            <th class="">BB4</th>
-            <th class="">BC4</th>
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <td class="">AL1</td>
             <td class="">AM1</td>
             <td class="">AN1</td>
@@ -1179,10 +1183,6 @@ describe('NestedHeaders', () => {
             <td class="">AW1</td>
             <td class="">AX1</td>
             <td class="">AY1</td>
-            <td class="">AZ1</td>
-            <td class="">BA1</td>
-            <td class="">BB1</td>
-            <td class="">BC1</td>
           </tr>
         </tbody>
         `);
@@ -1193,8 +1193,12 @@ describe('NestedHeaders', () => {
       hidingMap.setValueAtIndex(57, true); // Hide column that contains cells BF{n}
       hot.render();
 
-      hot.scrollViewportTo(void 0, 55); // Scroll to column BD4
-      hot.render();
+      scrollViewportTo({ // Scroll to column BD4
+        col: 55,
+        verticalSnap: 'top',
+        horizontalSnap: 'start',
+      });
+      render();
 
       expect(extractDOMStructure(getTopClone(), getMaster())).toMatchHTML(`
         <thead>
@@ -1276,7 +1280,7 @@ describe('NestedHeaders', () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <td class="">AU1</td>
             <td class="">AV1</td>
             <td class="">AW1</td>
@@ -1364,7 +1368,7 @@ describe('NestedHeaders', () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <td class="">A1</td>
             <td class="">B1</td>
             <td class="">C1</td>
@@ -1416,7 +1420,7 @@ describe('NestedHeaders', () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <td class="">A1</td>
             <td class="">E1</td>
             <td class="">F1</td>
@@ -1458,7 +1462,7 @@ describe('NestedHeaders', () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <td class="">E1</td>
             <td class="">H1</td>
             <td class="">I1</td>
@@ -1534,7 +1538,7 @@ describe('NestedHeaders', () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <td class="">E1</td>
             <td class="">H1</td>
             <td class="">I1</td>
@@ -1577,7 +1581,7 @@ describe('NestedHeaders', () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <td class="">A1</td>
             <td class="">E1</td>
             <td class="">F1</td>
@@ -1635,7 +1639,7 @@ describe('NestedHeaders', () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <td class="">A1</td>
             <td class="">B1</td>
             <td class="">C1</td>
@@ -1703,7 +1707,7 @@ describe('NestedHeaders', () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr class="ht__row_odd">
             <td class="">A1</td>
             <td class="">B1</td>
             <td class="">C1</td>
@@ -1762,7 +1766,12 @@ describe('NestedHeaders', () => {
 
       await sleep(200);
 
-      hot.scrollViewportTo(0, 7);
+      scrollViewportTo({
+        row: 0,
+        col: 7,
+        verticalSnap: 'top',
+        horizontalSnap: 'start',
+      });
 
       await sleep(200);
 
@@ -1784,7 +1793,12 @@ describe('NestedHeaders', () => {
 
       await sleep(200);
 
-      hot.scrollViewportTo(0, 15);
+      scrollViewportTo({
+        row: 0,
+        col: 15,
+        verticalSnap: 'top',
+        horizontalSnap: 'start',
+      });
 
       await sleep(300);
 
@@ -1818,7 +1832,7 @@ describe('NestedHeaders', () => {
             </tr>
           </thead>
           <tbody>
-            <tr>
+            <tr class="ht__row_odd">
               <td class="">A1</td>
               <td class="afterHiddenColumn">C1</td>
               <td class="">D1</td>
@@ -1860,7 +1874,7 @@ describe('NestedHeaders', () => {
             </tr>
           </thead>
           <tbody>
-            <tr>
+            <tr class="ht__row_odd">
               <td class="">A1</td>
               <td class="afterHiddenColumn">C1</td>
               <td class="">D1</td>
@@ -1887,7 +1901,7 @@ describe('NestedHeaders', () => {
             </tr>
           </thead>
           <tbody>
-            <tr>
+            <tr class="ht__row_odd">
               <td class="afterHiddenColumn">D1</td>
               <td class="afterHiddenColumn">F1</td>
               <td class="afterHiddenColumn">H1</td>
@@ -1908,7 +1922,7 @@ describe('NestedHeaders', () => {
             </tr>
           </thead>
           <tbody>
-            <tr>
+            <tr class="ht__row_odd">
               <td class="afterHiddenColumn">D1</td>
               <td class="afterHiddenColumn">F1</td>
               <td class="afterHiddenColumn">H1</td>

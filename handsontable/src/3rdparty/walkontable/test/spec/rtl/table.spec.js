@@ -703,48 +703,6 @@ describe('WalkontableTable (RTL mode)', () => {
     expect(wt.wtTable.getCoords($td2[0])).toEqual(new Walkontable.CellCoords(1, 1));
   });
 
-  it('getStretchedColumnWidth should return valid column width when stretchH is set as \'all\'', () => {
-    const wt = walkontable({
-      rtlMode: true,
-      data: getData,
-      totalRows: getTotalRows,
-      totalColumns: getTotalColumns,
-      rowHeaders: [function(row, TH) {
-        TH.innerHTML = row + 1;
-      }],
-      stretchH: 'all'
-    });
-
-    wt.draw();
-    wt.wtViewport.columnsRenderCalculator.refreshStretching(502);
-
-    expect(wt.wtTable.getStretchedColumnWidth(0, 50)).toBe(125);
-    expect(wt.wtTable.getStretchedColumnWidth(1, 50)).toBe(125);
-    expect(wt.wtTable.getStretchedColumnWidth(2, 50)).toBe(125);
-    expect(wt.wtTable.getStretchedColumnWidth(3, 50)).toBe(127);
-  });
-
-  it('getStretchedColumnWidth should return valid column width when stretchH is set as \'last\'', () => {
-    const wt = walkontable({
-      rtlMode: true,
-      data: getData,
-      totalRows: getTotalRows,
-      totalColumns: getTotalColumns,
-      rowHeaders: [function(row, TH) {
-        TH.innerHTML = row + 1;
-      }],
-      stretchH: 'last'
-    });
-
-    wt.draw();
-    wt.wtViewport.columnsRenderCalculator.refreshStretching(502);
-
-    expect(wt.wtTable.getStretchedColumnWidth(0, 50)).toBe(50);
-    expect(wt.wtTable.getStretchedColumnWidth(1, 50)).toBe(50);
-    expect(wt.wtTable.getStretchedColumnWidth(2, 50)).toBe(50);
-    expect(wt.wtTable.getStretchedColumnWidth(3, 50)).toBe(352);
-  });
-
   describe('getColumnHeader', () => {
     it('should return valid column header', () => {
       const wt = walkontable({

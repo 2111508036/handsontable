@@ -4,14 +4,12 @@
 
 <script lang="ts">
 import { HotTable } from '@handsontable/vue';
-import 'handsontable/dist/handsontable.full.css';
-
 import { getData } from "../utils/constants";
 import { progressBarRenderer } from "../renderers/progressBar";
 import { starsRenderer } from "../renderers/stars";
+import { getThemeName } from "../utils/utils";
 
 import {
-  alignHeaders,
   drawCheckboxInRowHeaders,
   addClassesToRows,
   changeCheckboxCell
@@ -20,8 +18,11 @@ import {
 export default {
   name: 'DataGrid',
   data: function() {
+    const isRtl = document.documentElement.getAttribute('dir') === 'rtl';
+
     return {
       hotSettings: {
+        themeName: getThemeName(),
         height: 450,
         dropdownMenu: true,
         manualRowMove: true,
@@ -29,14 +30,19 @@ export default {
           indicators: true,
         },
         contextMenu: true,
+        mergeCells: true,
         multiColumnSorting: true,
         filters: true,
         rowHeaders: true,
+        navigableHeaders: true,
+        manualColumnMove: true,
+        comments: true,
+        customBorders: true,
         afterOnCellMouseDown: changeCheckboxCell,
-        afterGetColHeader: alignHeaders,
+        headerClassName: isRtl ? "htRight" : "htLeft",
         afterGetRowHeader: drawCheckboxInRowHeaders,
         beforeRenderer: addClassesToRows,
-        colWidths: [140, 192, 100, 90, 90, 110, 97, 100, 126],
+        colWidths: [140, 210, 135, 100, 90, 110, 120, 115, 140],
         colHeaders: [
           "Company name",
           "Name",
@@ -59,11 +65,13 @@ export default {
           {
             data: 6,
             type: "checkbox",
-            className: "htCenter"
+            className: "htCenter",
+            headerClassName: "htCenter"
           },
           {
             data: 7,
-            type: "numeric"
+            type: "numeric",
+            headerClassName: "htRight"
           },
           {
             data: 8,
@@ -76,6 +84,7 @@ export default {
             renderer: starsRenderer,
             readOnly: true,
             className: "star htCenter",
+            headerClassName: "htCenter",
           },
           { data: 5, type: "text" },
           { data: 2, type: "text" }
@@ -92,41 +101,31 @@ export default {
 </script>
 
 <style lang="scss">
-/*
-  A stylesheet customizing app (custom renderers)
-*/
-
-table.htCore {
-  tr.odd td {
-    background: #fafbff;
+  .handsontable {
+    font-size: 13px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Helvetica Neue', Arial, sans-serif;
+    font-weight: 400;
   }
 
-  tr.selected td {
-    background: #edf3fd;
-  }
-
-  td .progressBar {
+  .handsontable td .progressBar {
     background: #37bc6c;
     height: 10px;
   }
 
-  td.star {
+  .handsontable td.star {
     color: #fcb515;
   }
-}
 
-/*
-  A stylesheet customizing Handsontable style
-*/
-
-.handsontable {
-  font-size: 13px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-  'Ubuntu', 'Helvetica Neue', Arial, sans-serif;
-  font-weight: 400;
-
-  .collapsibleIndicator {
-    text-align: center;
+  .handsontable .htCore tr.selected td {
+    background: #edf3fd;
   }
-}
+
+  .handsontable.ht-theme-main-dark .htCore tr.selected td {
+    background: #081b3d;
+  }
+
+  .handsontable.ht-theme-horizon-dark .htCore tr.selected td {
+    background: #3a2901;
+  }
 </style>

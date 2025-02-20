@@ -542,7 +542,7 @@ describe('Core.alter', () => {
 
         if (htmlDir === 'rtl') {
           expect(`
-            | * : * : * : * : * ║   |
+            | * : * : * : * : * ║ * |
             |===:===:===:===:===:===|
             | 0 : 0 : 0 : 0 : A ║ * |
             | 0 : 0 : 0 : 0 : 0 ║ * |
@@ -550,7 +550,7 @@ describe('Core.alter', () => {
           `).toBeMatchToSelectionPattern();
         } else {
           expect(`
-            |   ║ * : * : * : * : * |
+            | * ║ * : * : * : * : * |
             |===:===:===:===:===:===|
             | * ║ A : 0 : 0 : 0 : 0 |
             | * ║ 0 : 0 : 0 : 0 : 0 |
@@ -562,19 +562,19 @@ describe('Core.alter', () => {
 
         if (htmlDir === 'rtl') {
           expect(`
-            | * : * : * : * : * : * ║   |
+            | - : - : - : - : - : - ║   |
             |===:===:===:===:===:===:===|
-            | 0 : 0 : 0 : 0 : 0 : A ║ * |
-            | 0 : 0 : 0 : 0 : 0 : 0 ║ * |
-            | 0 : 0 : 0 : 0 : 0 : 0 ║ * |
+            | 0 : 0 : 0 : 0 : 0 : A ║ - |
+            | 0 : 0 : 0 : 0 : 0 : 0 ║ - |
+            | 0 : 0 : 0 : 0 : 0 : 0 ║ - |
           `).toBeMatchToSelectionPattern();
         } else {
           expect(`
-            |   ║ * : * : * : * : * : * |
+            |   ║ - : - : - : - : - : - |
             |===:===:===:===:===:===:===|
-            | * ║ A : 0 : 0 : 0 : 0 : 0 |
-            | * ║ 0 : 0 : 0 : 0 : 0 : 0 |
-            | * ║ 0 : 0 : 0 : 0 : 0 : 0 |
+            | - ║ A : 0 : 0 : 0 : 0 : 0 |
+            | - ║ 0 : 0 : 0 : 0 : 0 : 0 |
+            | - ║ 0 : 0 : 0 : 0 : 0 : 0 |
           `).toBeMatchToSelectionPattern();
         }
 
@@ -582,19 +582,19 @@ describe('Core.alter', () => {
 
         if (htmlDir === 'rtl') {
           expect(`
-            | * : * : * : * : * : * : * ║   |
+            | - : - : - : - : - : - : - ║   |
             |===:===:===:===:===:===:===:===|
-            | 0 : 0 : 0 : 0 : 0 : 0 : A ║ * |
-            | 0 : 0 : 0 : 0 : 0 : 0 : 0 ║ * |
-            | 0 : 0 : 0 : 0 : 0 : 0 : 0 ║ * |
+            | 0 : 0 : 0 : 0 : 0 : 0 : A ║ - |
+            | 0 : 0 : 0 : 0 : 0 : 0 : 0 ║ - |
+            | 0 : 0 : 0 : 0 : 0 : 0 : 0 ║ - |
           `).toBeMatchToSelectionPattern();
         } else {
           expect(`
-            |   ║ * : * : * : * : * : * : * |
+            |   ║ - : - : - : - : - : - : - |
             |===:===:===:===:===:===:===:===|
-            | * ║ A : 0 : 0 : 0 : 0 : 0 : 0 |
-            | * ║ 0 : 0 : 0 : 0 : 0 : 0 : 0 |
-            | * ║ 0 : 0 : 0 : 0 : 0 : 0 : 0 |
+            | - ║ A : 0 : 0 : 0 : 0 : 0 : 0 |
+            | - ║ 0 : 0 : 0 : 0 : 0 : 0 : 0 |
+            | - ║ 0 : 0 : 0 : 0 : 0 : 0 : 0 |
           `).toBeMatchToSelectionPattern();
         }
       });
@@ -629,28 +629,6 @@ describe('Core.alter', () => {
 
         expect(getColHeader()).toEqual(['Header0', 'B', 'Header1', 'Header2']);
         expect(countCols()).toBe(4);
-      });
-
-      it('should stretch the table after adding another column (if stretching is set to `all`)', () => {
-        spec().$container.css({
-          width: 500,
-        });
-
-        const hot = handsontable({
-          startCols: 5,
-          startRows: 10,
-          stretchH: 'all'
-        });
-
-        expect(Handsontable.dom.outerWidth(hot.view.TBODY)).toBe(500);
-
-        alter('insert_col_start', null, 1);
-
-        expect(Handsontable.dom.outerWidth(hot.view.TBODY)).toBe(500);
-
-        alter('insert_col_start', null, 1);
-
-        expect(Handsontable.dom.outerWidth(hot.view.TBODY)).toBe(500);
       });
 
       it('should insert column at proper position when there were some column sequence changes', () => {

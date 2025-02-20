@@ -67,7 +67,6 @@ describe('Core_view', () => {
       colWidths: [47, 47, 47, 47, 47],
       rowHeaders: true,
       colHeaders: true,
-      stretchH: 'all'
     });
 
     selectCell(0, 0);
@@ -128,218 +127,6 @@ describe('Core_view', () => {
 
     expect(hot.rootElement.querySelector('.wtHolder').scrollTop).toBeGreaterThan(scrollTop);
     expect(getSelected()).toEqual([[3, 0, 3, 0]]);
-  });
-
-  it('should scroll viewport without cell selection', () => {
-    spec().$container[0].style.width = '400px';
-
-    const hot1 = handsontable({
-      data: Handsontable.helper.createSpreadsheetData(20, 20),
-      height: 100
-    });
-
-    hot1.scrollViewportTo(10, 10);
-
-    const wtHolder = spec().$container.find('.ht_master .wtHolder');
-
-    expect(wtHolder[0].scrollTop).toEqual(230);
-    expect(wtHolder[0].scrollLeft).toEqual(500);
-
-  });
-
-  it('should scroll viewport to the last cell in the last row', async() => {
-    const hot = handsontable({
-      data: Handsontable.helper.createSpreadsheetData(120, 200),
-      height: 300,
-      width: 300,
-      rowHeaders: true,
-      colHeaders: true
-    });
-
-    await sleep(700);
-    hot.scrollViewportTo(119, 199);
-    await sleep(700);
-    expect(hot.view._wt.wtScroll.getLastVisibleColumn()).toEqual(199);
-    expect(hot.view._wt.wtScroll.getLastVisibleRow()).toEqual(119);
-  });
-
-  it('should scroll viewport properly when there are hidden columns ' +
-    '(row argument for the `scrollViewportTo` is defined)', () => {
-    const hot = handsontable({
-      width: 200,
-      height: 200,
-      startRows: 20,
-      startCols: 20,
-      hiddenColumns: {
-        columns: [0, 1, 2]
-      }
-    });
-
-    hot.scrollViewportTo(0, 15);
-    hot.render(); // Renders synchronously so we don't have to put stuff in waits/runs.
-
-    expect(hot.view._wt.wtTable.getFirstVisibleColumn()).toBe(15 - 3); // 3 hidden, not rendered elements.
-  });
-
-  it('should scroll viewport properly when there are hidden columns ' +
-    '(row argument for the `scrollViewportTo` is not defined)', () => {
-    const hot = handsontable({
-      width: 200,
-      height: 200,
-      startRows: 20,
-      startCols: 20,
-      hiddenColumns: {
-        columns: [0, 1, 2]
-      }
-    });
-
-    hot.scrollViewportTo(void 0, 15);
-    hot.render(); // Renders synchronously so we don't have to put stuff in waits/runs.
-
-    expect(hot.view._wt.wtTable.getFirstVisibleColumn()).toBe(15 - 3); // 3 hidden, not rendered elements before.
-  });
-
-  it('should scroll viewport to the right site of the destination index when the column is hidden (basing on visual indexes)', () => {
-    const hot = handsontable({
-      width: 200,
-      height: 200,
-      startRows: 20,
-      startCols: 20,
-      hiddenColumns: {
-        columns: [0, 1, 2, 7, 15]
-      }
-    });
-
-    const scrollResult1 = hot.scrollViewportTo(0, 7);
-
-    hot.render(); // Renders synchronously so we don't have to put stuff in waits/runs.
-
-    expect(scrollResult1).toBe(true);
-    expect(hot.view._wt.wtTable.getFirstVisibleColumn()).toBe(8 - 4); // 4 hidden, not rendered elements before.
-
-    const scrollResult2 = hot.scrollViewportTo(0, 15);
-
-    hot.render();
-
-    expect(scrollResult2).toBe(true);
-    expect(hot.view._wt.wtTable.getFirstVisibleColumn()).toBe(16 - 5); // 5 hidden, not rendered elements before.
-
-    const scrollResult3 = hot.scrollViewportTo(0, 7);
-
-    hot.render();
-
-    expect(scrollResult3).toBe(true);
-    expect(hot.view._wt.wtTable.getFirstVisibleColumn()).toBe(8 - 4); // 4 hidden, not rendered elements before.
-
-    const scrollResult4 = hot.scrollViewportTo(0, 0);
-
-    hot.render();
-
-    expect(scrollResult4).toBe(true);
-    expect(hot.view._wt.wtTable.getFirstVisibleColumn()).toBe(3 - 3); // 3 hidden, not rendered elements before.
-  });
-
-  it('should scroll viewport to the left site of the destination index when the column is hidden and there are ' +
-    'no visible indexes on the right (basing on visual indexes)', () => {
-    const hot = handsontable({
-      width: 200,
-      height: 200,
-      startRows: 20,
-      startCols: 20,
-      hiddenColumns: {
-        columns: [0, 1, 2, 7, 15, 16, 17, 18, 19]
-      }
-    });
-
-    const scrollResult1 = hot.scrollViewportTo(0, 15);
-
-    hot.render(); // Renders synchronously so we don't have to put stuff in waits/runs.
-
-    expect(scrollResult1).toBe(true);
-    expect(hot.view._wt.wtTable.getLastVisibleColumn()).toBe(14 - 4); // 4 hidden, not rendered elements before.
-
-    hot.scrollViewportTo(0, 19);
-    hot.render();
-
-    const scrollResult2 = hot.scrollViewportTo(0, 17);
-
-    hot.render();
-
-    expect(scrollResult2).toBe(true);
-    expect(hot.view._wt.wtTable.getLastVisibleColumn()).toBe(14 - 4); // 4 hidden, not rendered elements before.
-
-    const scrollResult3 = hot.scrollViewportTo(0, 19);
-
-    hot.render();
-
-    expect(scrollResult3).toBe(true);
-    expect(hot.view._wt.wtTable.getLastVisibleColumn()).toBe(14 - 4); // 4 hidden, not rendered elements before.
-  });
-
-  it('should scroll viewport to the the destination index when there are some hidden indexes (handling renderable indexes)', () => {
-    const hot = handsontable({
-      width: 200,
-      height: 200,
-      startRows: 20,
-      startCols: 20,
-      hiddenColumns: {
-        columns: [0, 1, 2, 7, 15]
-      }
-    });
-
-    const scrollResult1 = hot.scrollViewportTo(0, 2, false, false, false);
-
-    hot.render(); // Renders synchronously so we don't have to put stuff in waits/runs.
-
-    expect(scrollResult1).toBe(true);
-    expect(hot.view._wt.wtTable.getFirstVisibleColumn()).toBe(2);
-
-    const scrollResult2 = hot.scrollViewportTo(0, 14, false, false, false);
-
-    hot.render();
-
-    expect(scrollResult2).toBe(true);
-    expect(hot.view._wt.wtTable.getLastVisibleColumn()).toBe(14);
-
-    const scrollResult3 = hot.scrollViewportTo(0, 2, false, false, false);
-
-    hot.render();
-
-    expect(scrollResult3).toBe(true);
-    expect(hot.view._wt.wtTable.getFirstVisibleColumn()).toBe(2);
-
-    const scrollResult4 = hot.scrollViewportTo(0, 0, false, false, false);
-
-    hot.render();
-
-    expect(scrollResult4).toBe(true);
-    expect(hot.view._wt.wtTable.getFirstVisibleColumn()).toBe(0);
-  });
-
-  it('should not scroll viewport when all columns are hidden (basing on visual indexes)', () => {
-    const hot = handsontable({
-      width: 200,
-      height: 200,
-      startRows: 10,
-      startCols: 10,
-      hiddenColumns: {
-        columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-      }
-    });
-
-    const scrollResult1 = hot.scrollViewportTo(0, 0);
-
-    hot.render(); // Renders synchronously so we don't have to put stuff in waits/runs.
-
-    expect(scrollResult1).toBe(false);
-    expect(hot.view._wt.wtTable.getFirstVisibleColumn()).toBe(-1);
-
-    const scrollResult2 = hot.scrollViewportTo(0, 5);
-
-    hot.render();
-
-    expect(scrollResult2).toBe(false);
-    expect(hot.view._wt.wtTable.getFirstVisibleColumn()).toBe(-1);
   });
 
   it('should scroll viewport, respecting fixed rows', () => {
@@ -447,7 +234,6 @@ describe('Core_view', () => {
     expect(leftClone.find('tr:eq(0) td:eq(0)').html()).toEqual('A1');
     expect(leftClone.find('tr:eq(1) td:eq(0)').html()).toEqual('A2');
     expect(leftClone.find('tr:eq(2) td:eq(0)').html()).toEqual('A3');
-
   });
 
   it('should enable to change fixedColumnsStart with updateSettings', () => {
@@ -490,7 +276,224 @@ describe('Core_view', () => {
     expect(leftClone.find('tr:eq(1) td:eq(1)').html()).toEqual('B2');
     expect(leftClone.find('tr:eq(2) td:eq(0)').html()).toEqual('A3');
     expect(leftClone.find('tr:eq(2) td:eq(1)').html()).toEqual('B3');
+  });
 
+  it('should scroll the viewport horizontally from the column header navigation', () => {
+    handsontable({
+      data: createSpreadsheetData(10, 50),
+      width: 200,
+      height: 200,
+      colHeaders: true,
+      rowHeaders: true,
+      navigableHeaders: true,
+    });
+
+    const htCore = getHtCore();
+
+    selectCell(-1, 10);
+
+    keyDownUp('arrowleft');
+    keyDownUp('arrowleft');
+    keyDownUp('arrowleft');
+    keyDownUp('arrowleft');
+    keyDownUp('arrowleft');
+    keyDownUp('arrowleft');
+
+    expect(htCore.find('tr:eq(1) td:eq(0)').html()).toEqual('D1');
+    expect(htCore.find('tr:eq(1) td:eq(1)').html()).toEqual('E1');
+    expect(htCore.find('tr:eq(1) td:eq(2)').html()).toEqual('F1');
+  });
+
+  it('should scroll the viewport to the first column when the highlight moves to cell from the row header', () => {
+    handsontable({
+      data: createSpreadsheetData(10, 50),
+      width: 200,
+      height: 200,
+      colHeaders: true,
+      rowHeaders: true,
+      navigableHeaders: true,
+    });
+
+    const htCore = getHtCore();
+
+    selectCell(1, 40);
+    selectCell(1, -1);
+
+    expect(htCore.find('tr:eq(1) td:eq(0)').html()).toEqual('AH1');
+
+    keyDownUp('arrowright');
+
+    expect(htCore.find('tr:eq(1) td:eq(0)').html()).toEqual('A1');
+  });
+
+  it('should scroll the viewport to the first column when the highlight moves to column header from the corner', () => {
+    handsontable({
+      data: createSpreadsheetData(10, 50),
+      width: 200,
+      height: 200,
+      colHeaders: true,
+      rowHeaders: true,
+      navigableHeaders: true,
+    });
+
+    const htCore = getHtCore();
+
+    selectCell(1, 40);
+    selectCell(-1, -1);
+
+    expect(htCore.find('tr:eq(1) td:eq(0)').html()).toEqual('AH1');
+
+    keyDownUp('arrowright');
+
+    expect(htCore.find('tr:eq(1) td:eq(0)').html()).toEqual('A1');
+  });
+
+  it.forTheme('classic')('should scroll the viewport vertically from the row header navigation', async() => {
+    handsontable({
+      data: createSpreadsheetData(50, 10),
+      width: 200,
+      height: 200,
+      colHeaders: true,
+      rowHeaders: true,
+      navigableHeaders: true,
+    });
+
+    const htCore = getHtCore();
+
+    selectCell(10, -1);
+
+    keyDownUp('arrowup');
+    keyDownUp('arrowup');
+    keyDownUp('arrowup');
+    keyDownUp('arrowup');
+    keyDownUp('arrowup');
+    keyDownUp('arrowup');
+    keyDownUp('arrowup');
+    keyDownUp('arrowup');
+
+    expect(htCore.find('tr:eq(1) td:eq(0)').html()).toEqual('A2');
+    expect(htCore.find('tr:eq(2) td:eq(0)').html()).toEqual('A3');
+    expect(htCore.find('tr:eq(3) td:eq(0)').html()).toEqual('A4');
+  });
+
+  it.forTheme('main')('should scroll the viewport vertically from the row header navigation', async() => {
+    handsontable({
+      data: createSpreadsheetData(50, 10),
+      width: 200,
+      height: 240,
+      colHeaders: true,
+      rowHeaders: true,
+      navigableHeaders: true,
+    });
+
+    const htCore = getHtCore();
+
+    selectCell(10, -1);
+
+    keyDownUp('arrowup');
+    keyDownUp('arrowup');
+    keyDownUp('arrowup');
+    keyDownUp('arrowup');
+    keyDownUp('arrowup');
+    keyDownUp('arrowup');
+    keyDownUp('arrowup');
+    keyDownUp('arrowup');
+
+    expect(htCore.find('tr:eq(1) td:eq(0)').html()).toEqual('A2');
+    expect(htCore.find('tr:eq(2) td:eq(0)').html()).toEqual('A3');
+    expect(htCore.find('tr:eq(3) td:eq(0)').html()).toEqual('A4');
+  });
+
+  it.forTheme('classic')('should scroll the viewport to the first row when the highlight moves ' +
+    'down to the cell from the column header', () => {
+    handsontable({
+      data: createSpreadsheetData(50, 10),
+      width: 200,
+      height: 200,
+      colHeaders: true,
+      rowHeaders: true,
+      navigableHeaders: true,
+    });
+
+    const htCore = getHtCore();
+
+    selectCell(40, 1);
+    selectCell(-1, 1);
+
+    expect(htCore.find('tr:eq(1) td:eq(0)').html()).toEqual('A25');
+
+    keyDownUp('arrowdown');
+
+    expect(htCore.find('tr:eq(1) td:eq(0)').html()).toEqual('A1');
+  });
+
+  it.forTheme('main')('should scroll the viewport to the first row when the highlight moves ' +
+    'down to the cell from the column header', () => {
+    handsontable({
+      data: createSpreadsheetData(50, 10),
+      width: 200,
+      height: 240,
+      colHeaders: true,
+      rowHeaders: true,
+      navigableHeaders: true,
+    });
+
+    const htCore = getHtCore();
+
+    selectCell(40, 1);
+    selectCell(-1, 1);
+
+    expect(htCore.find('tr:eq(1) td:eq(0)').html()).toEqual('A25');
+
+    keyDownUp('arrowdown');
+
+    expect(htCore.find('tr:eq(1) td:eq(0)').html()).toEqual('A1');
+  });
+
+  it.forTheme('classic')('should scroll the viewport to the first row when the highlight moves ' +
+    'down to the row header from the corner', () => {
+    handsontable({
+      data: createSpreadsheetData(50, 10),
+      width: 200,
+      height: 200,
+      colHeaders: true,
+      rowHeaders: true,
+      navigableHeaders: true,
+    });
+
+    const htCore = getHtCore();
+
+    selectCell(40, 1);
+    selectCell(-1, -1);
+
+    expect(htCore.find('tr:eq(1) td:eq(0)').html()).toEqual('A25');
+
+    keyDownUp('arrowdown');
+
+    expect(htCore.find('tr:eq(1) td:eq(0)').html()).toEqual('A1');
+  });
+
+  it.forTheme('main')('should scroll the viewport to the first row when the highlight moves ' +
+    'down to the row header from the corner', () => {
+    handsontable({
+      data: createSpreadsheetData(50, 10),
+      width: 200,
+      height: 240,
+      colHeaders: true,
+      rowHeaders: true,
+      navigableHeaders: true,
+    });
+
+    const htCore = getHtCore();
+
+    selectCell(40, 1);
+    selectCell(-1, -1);
+
+    expect(htCore.find('tr:eq(1) td:eq(0)').html()).toEqual('A25');
+
+    keyDownUp('arrowdown');
+
+    expect(htCore.find('tr:eq(1) td:eq(0)').html()).toEqual('A1');
   });
 
   it('should not scroll viewport when last cell is clicked', () => {
@@ -589,6 +592,94 @@ describe('Core_view', () => {
     // after afterViewRender hook triggered element style shouldn't changed
     expect(hot.view._wt.wtTable.holder.style.overflow).toBe('scroll');
     expect(hot.view._wt.wtTable.holder.style.width).toBe('220px');
+  });
+
+  it('should correctly calculate the width of the top overlay after the vertical scrollbar disappears (#dev-954)', () => {
+    handsontable({
+      data: createSpreadsheetData(10, 10),
+      colHeaders: true,
+      width: 200,
+      height: 200,
+    });
+
+    selectColumns(1);
+
+    const rowMapper = rowIndexMapper().createAndRegisterIndexMap('my-hiding-map', 'trimming');
+
+    rowMapper.setValueAtIndex(0, true);
+    rowMapper.setValueAtIndex(1, true);
+    rowMapper.setValueAtIndex(2, true);
+    rowMapper.setValueAtIndex(3, true);
+    render();
+
+    expect(getTopClone().width()).forThemes(({ classic, main }) => {
+      classic.toBe(200);
+      main.toBe(185);
+    });
+  });
+
+  it.forTheme('classic')('should not extend the selection to the cell under the mouse pointer ' +
+    'after the viewport is moved (#dev-1479)', () => {
+    handsontable({
+      data: createSpreadsheetData(5, 5),
+    });
+
+    simulateClick(getCell(0, 0));
+    keyDownUp('enter');
+    getActiveEditor().TEXTAREA.value = 'AVeryLongStringThatWillBePastedInASingleCell';
+
+    // emulates behavior that is similar to the one that is caused by the bug
+    $(getCell(1, 2))
+      .simulate('mousedown');
+    $(getCell(1, 0))
+      .simulate('mouseover', {
+        clientX: 100, // coordinates of the cell 1, 2 before the column is resized
+        clientY: 24, // coordinates of the cell 1, 2 before the column is resized
+      })
+      .simulate('mouseup')
+      .simulate('click');
+
+    expect(getSelectedRange()).toEqualCellRange(['highlight: 1,2 from: 1,2 to: 1,2']);
+  });
+
+  it.forTheme('main')('should not extend the selection to the cell under the mouse pointer after ' +
+    'the viewport is moved (#dev-1479)', () => {
+    handsontable({
+      data: createSpreadsheetData(5, 5),
+    });
+
+    simulateClick(getCell(0, 0));
+    keyDownUp('enter');
+    getActiveEditor().TEXTAREA.value = 'AVeryLongStringThatWillBePastedInASingleCell';
+
+    // emulates behavior that is similar to the one that is caused by the bug
+    $(getCell(1, 2))
+      .simulate('mousedown');
+    $(getCell(1, 0))
+      .simulate('mouseover', {
+        clientX: 100, // coordinates of the cell 1, 2 before the column is resized
+        clientY: 30, // coordinates of the cell 1, 2 before the column is resized
+      })
+      .simulate('mouseup')
+      .simulate('click');
+
+    expect(getSelectedRange()).toEqualCellRange(['highlight: 1,2 from: 1,2 to: 1,2']);
+  });
+
+  it('should update the `scrollableElement` value of the Overlays after changing the table view size settings', () => {
+    const hot = handsontable({
+      rowHeaders: true,
+      colHeaders: true,
+    });
+
+    expect(hot.view._wt.wtOverlays.scrollableElement).toBe(window);
+
+    updateSettings({
+      width: 200,
+      height: 200,
+    });
+
+    expect(hot.view._wt.wtOverlays.scrollableElement).toBe(hot.rootElement.querySelector('.wtHolder'));
   });
 
   describe('scroll', () => {
@@ -754,128 +845,6 @@ describe('Core_view', () => {
 
       expect(spec().$container.find('.ht_clone_top_inline_start_corner tbody tr:eq(1) td:eq(1)')[0].clientHeight)
         .toEqual(rowHeight);
-    });
-  });
-
-  describe('stretchH', () => {
-    it('should stretch all visible columns with the ratio appropriate to the container\'s width', () => {
-      // reset scrolled window
-      window.scrollTo(0, 0);
-      spec().$container[0].style.width = '300px';
-
-      const hot = handsontable({
-        startRows: 5,
-        startCols: 5,
-        rowHeaders: true,
-        colHeaders: true,
-        stretchH: 'all'
-      });
-      const rowHeaderWidth = hot.view._wt.wtViewport.getRowHeaderWidth();
-
-      expect(hot.view._wt.wtOverlays.inlineStartOverlay.getScrollPosition()).toEqual(0);
-
-      let expectedCellWidth = (parseInt(spec().$container[0].style.width, 10) - rowHeaderWidth) / 5;
-
-      expect(getCell(0, 0).offsetWidth).toEqual(expectedCellWidth);
-      expect(getCell(0, 1).offsetWidth).toEqual(expectedCellWidth);
-      expect(getCell(0, 2).offsetWidth).toEqual(expectedCellWidth);
-      expect(getCell(0, 3).offsetWidth).toEqual(expectedCellWidth);
-      expect(getCell(0, 4).offsetWidth).toEqual(expectedCellWidth);
-
-      spec().$container[0].style.width = '';
-      spec().$container.wrap('<div class="temp_wrapper" style="width:400px;"></div>');
-      hot.render();
-
-      expectedCellWidth = (parseInt($('.temp_wrapper')[0].style.width, 10) - rowHeaderWidth) / 5;
-
-      expect(getCell(0, 0).offsetWidth).toEqual(expectedCellWidth);
-      expect(getCell(0, 1).offsetWidth).toEqual(expectedCellWidth);
-      expect(getCell(0, 2).offsetWidth).toEqual(expectedCellWidth);
-      expect(getCell(0, 3).offsetWidth).toEqual(expectedCellWidth);
-      expect(getCell(0, 4).offsetWidth).toEqual(expectedCellWidth);
-
-      spec().$container.unwrap();
-    });
-
-    it('should stretch all visible columns with overflow hidden', () => {
-      spec().$container[0].style.width = '501px';
-      spec().$container[0].style.height = '100px';
-      spec().$container[0].style.overflow = 'hidden';
-
-      handsontable({
-        startRows: 10,
-        startCols: 5,
-        colWidths: [47, 47, 47, 47, 47],
-        rowHeaders: true,
-        colHeaders: true,
-        stretchH: 'all'
-      });
-
-      const masterTH = spec().$container[0].querySelectorAll('.ht_master thead tr th');
-      const overlayTH = spec().$container[0].querySelectorAll('.ht_clone_top thead tr th');
-
-      expect(masterTH[0].offsetWidth).toEqual(50);
-      expect(overlayTH[0].offsetWidth).toEqual(50);
-
-      expect(masterTH[1].offsetWidth).toBeInArray([86, 87, 88, 90]);
-      expect(overlayTH[1].offsetWidth).toBeInArray([86, 87, 88, 90]); // if you get 90, it means it is calculated before scrollbars were applied, or show scroll on scrolling is enabled
-
-      expect(masterTH[2].offsetWidth).toEqual(overlayTH[2].offsetWidth);
-      expect(masterTH[3].offsetWidth).toEqual(overlayTH[3].offsetWidth);
-      expect(masterTH[4].offsetWidth).toEqual(overlayTH[4].offsetWidth);
-      expect(masterTH[5].offsetWidth).toEqual(overlayTH[5].offsetWidth);
-    });
-
-    it('should respect stretched widths returned in beforeStretchingColumnWidth hook', () => {
-      spec().$container[0].style.width = '501px';
-      spec().$container[0].style.height = '100px';
-      spec().$container[0].style.overflow = 'hidden';
-
-      const callbackSpy = jasmine.createSpy();
-
-      callbackSpy.and.callFake((width, column) => {
-        if (column === 1) {
-          return 150;
-        }
-
-        return width;
-      });
-
-      handsontable({
-        startRows: 2,
-        startCols: 5,
-        rowHeaders: true,
-        colHeaders: true,
-        stretchH: 'all',
-        beforeStretchingColumnWidth: callbackSpy
-      });
-
-      const $columnHeaders = spec().$container.find('thead tr:eq(0) th');
-
-      expect($columnHeaders.eq(0).width()).toEqual(48);
-      expect($columnHeaders.eq(1).width()).toEqual(73);
-      expect($columnHeaders.eq(2).width()).toEqual(149);
-      expect($columnHeaders.eq(3).width()).toEqual(74);
-      expect($columnHeaders.eq(4).width()).toEqual(74);
-
-      expect(callbackSpy).toHaveBeenCalled();
-      // First cycle to check what columns has permanent width
-      expect(callbackSpy.calls.argsFor(0)[0]).not.toBeDefined();
-      expect(callbackSpy.calls.argsFor(0)[1]).toBe(0);
-      expect(callbackSpy.calls.argsFor(1)[0]).not.toBeDefined();
-      expect(callbackSpy.calls.argsFor(1)[1]).toBe(1);
-      expect(callbackSpy.calls.argsFor(2)[0]).not.toBeDefined();
-      expect(callbackSpy.calls.argsFor(2)[1]).toBe(2);
-      expect(callbackSpy.calls.argsFor(3)[0]).not.toBeDefined();
-      expect(callbackSpy.calls.argsFor(3)[1]).toBe(3);
-      expect(callbackSpy.calls.argsFor(4)[0]).not.toBeDefined();
-      expect(callbackSpy.calls.argsFor(4)[1]).toBe(4);
-      // // Second cycle retrieve stretched width or permanent width
-      expect(callbackSpy.calls.argsFor(5)[0]).toBe(75);
-      expect(callbackSpy.calls.argsFor(6)[0]).toBe(75);
-      expect(callbackSpy.calls.argsFor(7)[0]).toBe(75);
-      expect(callbackSpy.calls.argsFor(8)[0]).toBe(75);
-      expect(callbackSpy.calls.argsFor(9)[0]).toBe(75);
     });
   });
 });

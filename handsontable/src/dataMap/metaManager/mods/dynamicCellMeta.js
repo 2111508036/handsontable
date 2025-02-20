@@ -1,4 +1,4 @@
-import Hooks from '../../../pluginHooks';
+import { Hooks } from '../../../core/hooks';
 import { hasOwnProperty } from '../../../helpers/object';
 import { isFunction } from '../../../helpers/function';
 
@@ -18,15 +18,17 @@ import { isFunction } from '../../../helpers/function';
  * the logic is triggered only once per one Handsontable slow render cycle.
  */
 export class DynamicCellMetaMod {
+  /**
+   * @type {MetaManager}
+   */
+  metaManager;
+  /**
+   * @type {Map}
+   */
+  metaSyncMemo = new Map();
+
   constructor(metaManager) {
-    /**
-     * @type {MetaManager}
-     */
     this.metaManager = metaManager;
-    /**
-     * @type {Map}
-     */
-    this.metaSyncMemo = new Map();
 
     metaManager.addLocalHook('afterGetCellMeta', cellMeta => this.extendCellMeta(cellMeta));
 

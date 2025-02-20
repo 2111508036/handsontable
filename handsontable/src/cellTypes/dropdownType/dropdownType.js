@@ -1,12 +1,13 @@
 import { DropdownEditor } from '../../editors/dropdownEditor';
-import { autocompleteRenderer } from '../../renderers/autocompleteRenderer';
-import { autocompleteValidator } from '../../validators/autocompleteValidator';
+import { dropdownRenderer } from '../../renderers/dropdownRenderer';
+import { dropdownValidator } from '../../validators/dropdownValidator';
 
 export const CELL_TYPE = 'dropdown';
 export const DropdownCellType = {
   CELL_TYPE,
   editor: DropdownEditor,
-  // displays small gray arrow on right side of the cell
-  renderer: autocompleteRenderer,
-  validator: autocompleteValidator,
+  renderer: dropdownRenderer, // displays small gray arrow on right side of the cell
+  validator: dropdownValidator,
+  filter: false,
+  strict: true,
 };

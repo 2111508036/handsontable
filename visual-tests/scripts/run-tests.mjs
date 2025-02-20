@@ -8,12 +8,14 @@ import path from 'path';
 import execa from 'execa';
 import fse from 'fs-extra';
 import chalk from 'chalk';
-import mainPackageJSON from '../package.json' assert { type: 'json' };
 import { isReferenceBranch, getFrameworkList, sleep, killProcess } from './utils/utils.mjs';
-import { WRAPPERS, REFERENCE_FRAMEWORK, EXAMPLES_SERVER_PORT } from '../src/config.mjs';
+import {
+  WRAPPERS,
+  THEMES,
+  REFERENCE_FRAMEWORK,
+  EXAMPLES_SERVER_PORT
+} from '../src/config.mjs';
 
-const playwrightVersion = mainPackageJSON.devDependencies.playwright;
-const pathToMount = path.resolve(process.cwd(), '..');
 const dirs = {
   examples: '../examples/next/visual-tests',
   codeToRun: 'demo',
@@ -44,39 +46,48 @@ for (let i = 0; i < frameworksToTest.length; i++) {
   console.log(chalk.green(`Testing "${frameworkName}" examples...`));
 
   try {
-    if (process.env.CI) {
-      await execa.command('npx playwright test', {
-        env: {
-          HOT_FRAMEWORK: frameworkName
-        },
-        stdout: 'inherit'
-      });
-    } else {
-      // we need access to the `examples` and `virtual-tests` directories,
-      // so we mount the entire Handsontable directory as a virtual `vtests` directory,
-      // and then open the `visual-tests` directory inside of `vtests`
-      const dockerCommand = `docker run \
-        --rm \
-        -it \
-        --name vtests-container \
-        --env HOT_FRAMEWORK=${frameworkName} \
-        -v ${pathToMount}:/vtests/ \
-        -w /vtests/visual-tests \
-        mcr.microsoft.com/playwright:v${playwrightVersion}-focal npx playwright test \
-        --reporter=dot \
-        --timeout=7000`;
-
-      await execa.command(dockerCommand, { stdio: 'inherit' });
-    }
+    await execa.command('npx playwright test --reporter=dot', {
+      env: {
+        HOT_FRAMEWORK: frameworkName
+      },
+      stdout: 'inherit'
+    });
   } catch (ex) {
     await killProcess(localhostProcess.pid);
     throw new Error(ex.message);
   }
 
-  await killProcess(localhostProcess.pid);
+  if (frameworkName === 'js') {
+    console.log('');
+    console.log(chalk.green(`Finished testing "${frameworkName}" examples.`));
 
-  console.log(chalk.green(`Finished testing "${frameworkName}" examples.`));
-  console.log('');
+    for (let themeIndex = 0; themeIndex < THEMES.length; themeIndex++) {
+      const themeName = THEMES[themeIndex];
+
+      console.log(chalk.green(`Testing JavaScript examples with "${themeName}" theme...`));
+
+      try {
+        await execa.command('npx playwright test --reporter=dot', {
+          env: {
+            HOT_FRAMEWORK: frameworkName,
+            HOT_THEME: themeName,
+          },
+          stdout: 'inherit'
+        });
+      } catch (ex) {
+        await killProcess(localhostProcess.pid);
+        throw new Error(ex.message);
+      }
+
+      console.log('');
+      console.log(chalk.green(`Finished testing examples with "${themeName}" theme.`));
+    }
+  } else {
+    console.log('');
+    console.log(chalk.green(`Finished testing "${frameworkName}" examples.`));
+  }
+
+  await killProcess(localhostProcess.pid);
 }
 
 // the screenshots are ready
@@ -96,8 +107,8 @@ if (isReferenceBranch()) {
   // so we need to make sure the paths are the same
   for (let i = 0; i < WRAPPERS.length; ++i) {
     fse.copySync(
-      path.resolve(`${dirs.screenshots}/${REFERENCE_FRAMEWORK}`),
-      path.resolve(`${dirs.screenshots}/${WRAPPERS[i]}`),
+      path.resolve(`${dirs.screenshots}/${REFERENCE_FRAMEWORK}/chromium/multi-frameworks`),
+      path.resolve(`${dirs.screenshots}/${WRAPPERS[i]}/chromium/multi-frameworks`),
       { overwrite: true });
   }
 }

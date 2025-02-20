@@ -295,6 +295,15 @@ export default {
         metaTitle: 'Search - React Data Grid | Handsontable',
       },
     },
+    'StretchColumns.md': {
+      id: '9a2z1j1i',
+      metaTitle: 'StretchColumns - JavaScript Data Grid | Handsontable',
+      description: 'Use the StretchColumns plugin with its API options and methods to stretch the columns.',
+      react: {
+        id: 'a2b7ku2p',
+        metaTitle: 'StretchColumns - React Data Grid | Handsontable',
+      },
+    },
     'TrimRows.md': {
       id: 'ks06q7cq',
       metaTitle: 'TrimRows - JavaScript Data Grid | Handsontable',
@@ -482,6 +491,15 @@ export default {
       react: {
         id: 'l3n89gff',
         metaTitle: 'TrimmingMap - React Data Grid | Handsontable',
+      },
+    },
+    'EventManager.md': {
+      id: '3k9p5r7t',
+      metaTitle: 'EventManager - JavaScript Data Grid | Handsontable',
+      description: 'Options, members, and methods of Handsontable\'s EventManager API.',
+      react: {
+        id: '5j7d9k2r',
+        metaTitle: 'EventManager - React Data Grid | Handsontable',
       },
     },
   }

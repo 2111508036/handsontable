@@ -73,8 +73,8 @@ export function instanceToHTML(instance) {
             cell = `<td ${attrs.join(' ')}></td>`;
           } else {
             const value = cellData.toString()
-              .replace('<', '&lt;')
-              .replace('>', '&gt;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
               .replace(/(<br(\s*|\/)>(\r\n|\n)?|\r\n|\n)/g, '<br>\r\n')
               .replace(/\x20/gi, '&nbsp;')
               .replace(/\t/gi, '&#9;');
@@ -171,8 +171,16 @@ export function htmlToGridSettings(element, rootDocument = document) {
   if (typeof checkElement === 'string') {
     const escapedAdjacentHTML = checkElement.replace(/<td\b[^>]*?>([\s\S]*?)<\/\s*td>/g, (cellFragment) => {
       const openingTag = cellFragment.match(/<td\b[^>]*?>/g)[0];
+      const paragraphRegexp = /<p.*?>/g;
       const cellValue = cellFragment
-        .substring(openingTag.length, cellFragment.lastIndexOf('<')).replace(/(<(?!br)([^>]+)>)/gi, '');
+        .substring(openingTag.length, cellFragment.lastIndexOf('<'))
+        .trim() // Removing whitespaces from the start and the end of HTML fragment
+        .replaceAll(/\n\s+/g, ' ') // HTML tags may be split using multiple new lines and whitespaces
+        .replaceAll(paragraphRegexp, '\n') // Only paragraphs should split text using new line characters
+        .replace('\n', '') // First paragraph shouldn't start with new line characters
+        .replaceAll(/<\/(.*)>\s+$/mg, '</$1>') // HTML tags may end with whitespace.
+        .replace(/(<(?!br)([^>]+)>)/gi, '') // Removing HTML tags
+        .replaceAll(/^&nbsp;$/mg, ''); // Removing single &nbsp; characters separating new lines
       const closingTag = '</td>';
 
       return `${openingTag}${cellValue}${closingTag}`;
@@ -287,7 +295,7 @@ export function htmlToGridSettings(element, rootDocument = document) {
         rowSpan: rowspan,
         colSpan: colspan,
       } = cell;
-      const col = dataArr[row].findIndex(value => value === void 0);
+      const col = dataArr[row].findIndex(value => value === undefined);
 
       if (nodeName === 'TD') {
         if (rowspan > 1 || colspan > 1) {

@@ -6,6 +6,7 @@ import { isMacOS } from '../helpers/browser';
 
 const MODIFIER_KEYS = ['meta', 'alt', 'shift', 'control'];
 const modifierKeysObserver = createKeysObserver();
+const modKeyListeners = [];
 let instanceCounter = 0;
 
 /* eslint-disable jsdoc/require-description-complete-sentence */
@@ -86,11 +87,16 @@ export function useRecorder(ownerWindow, handleEvent, beforeKeyDown, afterKeyDow
     // keyCode 229 aka 'uninitialized' doesn't take into account with editors. This key code is
     // produced when unfinished character is entering using the IME editor. It is fired on macOS,
     // Windows and linux (ubuntu) with installed ibus-pinyin package.
-    if (event.keyCode === 229 || result === false || isImmediatePropagationStopped(event)) {
+    if (
+      result === false ||
+      event.keyCode === 229 ||
+      typeof event.key !== 'string' ||
+      isImmediatePropagationStopped(event)
+    ) {
       return;
     }
 
-    const pressedKey = normalizeEventKey(event.key);
+    const pressedKey = normalizeEventKey(event);
     let extraModifierKeys = [];
 
     if (!isModifierKey(pressedKey)) {
@@ -101,7 +107,7 @@ export function useRecorder(ownerWindow, handleEvent, beforeKeyDown, afterKeyDow
     const isExecutionCancelled = callback(event, pressedKeys);
 
     if (!isExecutionCancelled &&
-        (isMacOS() && extraModifierKeys.includes('meta') || !isMacOS() && extraModifierKeys.includes('control'))) {
+      (isMacOS() && extraModifierKeys.includes('meta') || !isMacOS() && extraModifierKeys.includes('control'))) {
       // Trigger the callback for the virtual OS-dependent "control/meta" key
       callback(event, [pressedKey].concat(getPressedModifierKeys(event, true)));
     }
@@ -116,10 +122,12 @@ export function useRecorder(ownerWindow, handleEvent, beforeKeyDown, afterKeyDow
    * @param {KeyboardEvent} event The event object
    */
   const onkeydownForModKeys = (event) => {
-    const pressedKey = normalizeEventKey(event.key);
+    if (typeof event.key === 'string') {
+      const pressedKey = normalizeEventKey(event);
 
-    if (isModifierKey(pressedKey)) {
-      modifierKeysObserver.press(pressedKey);
+      if (isModifierKey(pressedKey)) {
+        modifierKeysObserver.press(pressedKey);
+      }
     }
   };
 
@@ -130,10 +138,12 @@ export function useRecorder(ownerWindow, handleEvent, beforeKeyDown, afterKeyDow
    * @param {KeyboardEvent} event The event object
    */
   const onkeyupForModKeys = (event) => {
-    const pressedKey = normalizeEventKey(event.key);
+    if (typeof event.key === 'string') {
+      const pressedKey = normalizeEventKey(event);
 
-    if (isModifierKey(pressedKey)) {
-      modifierKeysObserver.release(pressedKey);
+      if (isModifierKey(pressedKey)) {
+        modifierKeysObserver.release(pressedKey);
+      }
     }
   };
 
@@ -157,7 +167,10 @@ export function useRecorder(ownerWindow, handleEvent, beforeKeyDown, afterKeyDow
     while (eventTarget) {
       if (instanceCounter === 1) {
         eventTarget.document.documentElement.addEventListener('keydown', onkeydownForModKeys);
+        modKeyListeners.push({ event: 'keydown', listener: onkeydownForModKeys });
+
         eventTarget.document.documentElement.addEventListener('keyup', onkeyupForModKeys);
+        modKeyListeners.push({ event: 'keyup', listener: onkeyupForModKeys });
       }
 
       eventTarget.document.documentElement.addEventListener('keydown', onkeydown);
@@ -177,8 +190,13 @@ export function useRecorder(ownerWindow, handleEvent, beforeKeyDown, afterKeyDow
 
     while (eventTarget) {
       if (instanceCounter === 0) {
-        eventTarget.document.documentElement.removeEventListener('keydown', onkeydownForModKeys);
-        eventTarget.document.documentElement.removeEventListener('keyup', onkeyupForModKeys);
+        for (let i = 0; i < modKeyListeners.length; i++) {
+          const { event, listener } = modKeyListeners[i];
+
+          eventTarget.document.documentElement.removeEventListener(event, listener);
+        }
+
+        modKeyListeners.length = 0;
       }
 
       eventTarget.document.documentElement.removeEventListener('keydown', onkeydown);

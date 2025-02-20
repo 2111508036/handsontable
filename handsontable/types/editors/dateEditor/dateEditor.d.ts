@@ -1,4 +1,4 @@
-import { PikadayOptions } from 'pikaday';
+import { PikadayOptions } from '@handsontable/pikaday';
 import Core from '../../core';
 import { TextEditor } from '../textEditor';
 
@@ -6,8 +6,6 @@ export const EDITOR_TYPE: 'date';
 export class DateEditor extends TextEditor {
   constructor(instance: Core);
 
-  defaultDateFormat: string;
-  isCellEdited: boolean;
   parentDestroyed: boolean;
 
   destroyElements(): void;

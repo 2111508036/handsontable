@@ -1,4 +1,3 @@
-import { getValidSelection } from '../utils';
 import * as C from '../../../i18n/constants';
 
 export const KEY = 'col_right';
@@ -23,19 +22,18 @@ export default function columnRightItem() {
         return true;
       }
 
-      const selected = getValidSelection(this);
+      const range = this.getSelectedRangeLast();
 
-      if (!selected) {
+      if (
+        !range ||
+        this.selection.isSelectedByRowHeader() ||
+        (range.isSingleHeader() && range.highlight.col < 0) ||
+        (this.countSourceCols() >= this.getSettings().maxCols)
+      ) {
         return true;
       }
 
-      if (this.selection.isSelectedByCorner()) {
-        // Enable "Insert column right" always when the menu is triggered by corner click.
-        return false;
-      }
-
-      return this.selection.isSelectedByRowHeader() ||
-        this.countCols() >= this.getSettings().maxCols;
+      return false;
     },
     hidden() {
       return !this.getSettings().allowInsertColumn;

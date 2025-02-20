@@ -46,9 +46,16 @@ module.exports.create = function create(envArgs) {
         }`,
         externalCssFiles: [
           'lib/normalize.css',
-          '../dist/handsontable.css',
-          `${getClosest('../node_modules/pikaday', true)}/css/pikaday.css`,
-          'helpers/common.css',
+          ...((envArgs.HOT_THEME && envArgs.HOT_THEME !== 'classic') ? [
+              '../styles/handsontable.css',
+              `../styles/ht-theme-${envArgs.HOT_THEME}.css`,
+              'helpers/common-themes.css',
+            ] : [
+              '../dist/handsontable.css',
+              'helpers/common-classic.css',
+            ]
+          ),
+          `${getClosest('../node_modules/@handsontable/pikaday', true)}/css/pikaday.css`,
         ],
         externalJsFiles: [
           'helpers/jasmine-progressbar-reporter.js',
@@ -58,7 +65,7 @@ module.exports.create = function create(envArgs) {
           `${getClosest('../node_modules/numbro', true)}/dist/numbro.js`,
           `${getClosest('../node_modules/numbro', true)}/dist/languages.min.js`,
           `${getClosest('../node_modules/moment', true)}/moment.js`,
-          `${getClosest('../node_modules/pikaday', true)}/pikaday.js`,
+          `${getClosest('../node_modules/@handsontable/pikaday', true)}/pikaday.js`,
           `${getClosest('../node_modules/dompurify', true)}/dist/purify.js`,
           `../dist/handsontable.js`,
           `../dist/languages/all.js`,

@@ -1,20 +1,21 @@
 import { BaseEditor, EDITOR_STATE } from '../baseEditor';
 import EventManager from '../../eventManager';
-import { isMobileBrowser, isEdge, isIOS } from '../../helpers/browser';
+import { isEdge, isIOS } from '../../helpers/browser';
 import {
   addClass,
-  getComputedStyle,
+  isThisHotChild,
   setCaretPosition,
   hasClass,
   removeClass,
+  setAttribute,
 } from '../../helpers/dom/element';
 import { rangeEach } from '../../helpers/number';
-import { KEY_CODES } from '../../helpers/unicode';
-import { autoResize } from '../../3rdparty/autoResize';
+import { createInputElementResizer } from '../../utils/autoResize';
 import { isDefined } from '../../helpers/mixed';
-import { SHORTCUTS_GROUP_NAVIGATION, SHORTCUTS_GROUP_EDITOR as EDITOR_MANAGER_GROUP } from '../../editorManager';
-import { SHORTCUTS_GROUP_EDITOR } from '../baseEditor/baseEditor';
 import { updateCaretPosition } from './caretPositioner';
+import {
+  A11Y_TABINDEX,
+} from '../../helpers/a11y';
 
 const EDITOR_VISIBLE_CLASS_NAME = 'ht_editor_visible';
 const EDITOR_HIDDEN_CLASS_NAME = 'ht_editor_hidden';
@@ -32,59 +33,61 @@ export class TextEditor extends BaseEditor {
   }
 
   /**
-   * @param {Core} instance The Handsontable instance.
+   * Instance of {@link EventManager}.
+   *
+   * @private
+   * @type {EventManager}
    */
-  constructor(instance) {
-    super(instance);
-    /**
-     * Instance of {@link EventManager}.
-     *
-     * @private
-     * @type {EventManager}
-     */
+  eventManager = new EventManager(this);
+  /**
+   * Autoresize instance. Automagically resizes editor after changes.
+   *
+   * @private
+   * @type {Function}
+   */
+  autoResize = createInputElementResizer(this.hot.rootDocument);
+  /**
+   * An TEXTAREA element.
+   *
+   * @private
+   * @type {HTMLTextAreaElement}
+   */
+  TEXTAREA;
+  /**
+   * Style declaration object of the TEXTAREA element.
+   *
+   * @private
+   * @type {CSSStyleDeclaration}
+   */
+  textareaStyle;
+  /**
+   * Parent element of the TEXTAREA.
+   *
+   * @private
+   * @type {HTMLDivElement}
+   */
+  TEXTAREA_PARENT;
+  /**
+   * Style declaration object of the TEXTAREA_PARENT element.
+   *
+   * @private
+   * @type {CSSStyleDeclaration}
+   */
+  textareaParentStyle;
+  /**
+   * Z-index class style for the editor.
+   *
+   * @private
+   * @type {string}
+   */
+  layerClass;
+
+  /**
+   * @param {Core} hotInstance The Handsontable instance.
+   */
+  constructor(hotInstance) {
+    super(hotInstance);
     this.eventManager = new EventManager(this);
-    /**
-     * Autoresize instance. Automagically resizes editor after changes.
-     *
-     * @private
-     * @type {autoResize}
-     */
-    this.autoResize = autoResize();
-    /**
-     * An TEXTAREA element.
-     *
-     * @private
-     * @type {HTMLTextAreaElement}
-     */
-    this.TEXTAREA = void 0;
-    /**
-     * Style declaration object of the TEXTAREA element.
-     *
-     * @private
-     * @type {CSSStyleDeclaration}
-     */
-    this.textareaStyle = void 0;
-    /**
-     * Parent element of the TEXTAREA.
-     *
-     * @private
-     * @type {HTMLDivElement}
-     */
-    this.TEXTAREA_PARENT = void 0;
-    /**
-     * Style declaration object of the TEXTAREA_PARENT element.
-     *
-     * @private
-     * @type {CSSStyleDeclaration}
-     */
-    this.textareaParentStyle = void 0;
-    /**
-     * Z-index class style for the editor.
-     *
-     * @private
-     * @type {string}
-     */
-    this.layerClass = void 0;
 
     this.createElements();
     this.bindEvents();
@@ -116,13 +119,7 @@ export class TextEditor extends BaseEditor {
   open() {
     this.refreshDimensions(); // need it instantly, to prevent https://github.com/handsontable/handsontable/issues/348
     this.showEditableElement();
-
-    const shortcutManager = this.hot.getShortcutManager();
-
-    shortcutManager.setActiveContextName('editor');
-
-    this.addHook('afterDocumentKeyDown', event => this.onAfterDocumentKeyDown(event));
-
+    this.hot.getShortcutManager().setActiveContextName('editor');
     this.registerShortcuts();
   }
 
@@ -132,13 +129,12 @@ export class TextEditor extends BaseEditor {
   close() {
     this.autoResize.unObserve();
 
-    if (this.hot.rootDocument.activeElement === this.TEXTAREA) {
+    if (isThisHotChild(this.hot.rootDocument.activeElement, this.hot.rootElement)) {
       this.hot.listen(); // don't refocus the table if user focused some cell outside of HT on purpose
     }
 
     this.hideEditableElement();
     this.unregisterShortcuts();
-    this.removeHooksByKey('afterDocumentKeyDown');
   }
 
   /**
@@ -149,7 +145,7 @@ export class TextEditor extends BaseEditor {
    * @param {number|string} prop The column property (passed when datasource is an array of objects).
    * @param {HTMLTableCellElement} td The rendered cell element.
    * @param {*} value The rendered value.
-   * @param {object} cellProperties The cell meta object ({@see Core#getCellMeta}).
+   * @param {object} cellProperties The cell meta object (see {@link Core#getCellMeta}).
    */
   prepare(row, col, prop, td, value, cellProperties) {
     const previousState = this.state;
@@ -161,25 +157,16 @@ export class TextEditor extends BaseEditor {
 
       const {
         allowInvalid,
-        fragmentSelection,
       } = cellProperties;
 
-      if (allowInvalid) {
+      if (allowInvalid && !this.isOpened()) {
         // Remove an empty space from textarea (added by copyPaste plugin to make copy/paste
         // functionality work with IME)
         this.TEXTAREA.value = '';
       }
 
-      if (previousState !== EDITOR_STATE.FINISHED) {
+      if (previousState !== EDITOR_STATE.FINISHED && !this.isOpened()) {
         this.hideEditableElement();
-      }
-
-      // @TODO: The fragmentSelection functionality is conflicted with IME. For this feature
-      // refocus has to be disabled (to make IME working).
-      const restoreFocus = !fragmentSelection;
-
-      if (restoreFocus && !isMobileBrowser()) {
-        this.focus();
       }
     }
   }
@@ -217,8 +204,13 @@ export class TextEditor extends BaseEditor {
     const { rootDocument } = this.hot;
 
     this.TEXTAREA = rootDocument.createElement('TEXTAREA');
-    this.TEXTAREA.setAttribute('data-hot-input', ''); // Makes the element recognizable by Hot as its own component's element.
-    this.TEXTAREA.tabIndex = -1;
+
+    // Makes the element recognizable by Hot as its own
+    // component's element.
+    setAttribute(this.TEXTAREA, [
+      ['data-hot-input', ''],
+      A11Y_TABINDEX(-1),
+    ]);
 
     addClass(this.TEXTAREA, 'handsontableInput');
 
@@ -274,7 +266,6 @@ export class TextEditor extends BaseEditor {
     this.textareaParentStyle.opacity = '1';
 
     this.textareaStyle.textIndent = '';
-    this.textareaStyle.overflowY = 'hidden';
 
     const childNodes = this.TEXTAREA_PARENT.childNodes;
     let hasClassHandsontableEditor = false;
@@ -354,30 +345,18 @@ export class TextEditor extends BaseEditor {
     this.textareaParentStyle[this.hot.isRtl() ? 'right' : 'left'] = `${start}px`;
     this.showEditableElement();
 
-    const cellComputedStyle = getComputedStyle(this.TD, this.hot.rootWindow);
+    const cellComputedStyle = this.hot.rootWindow.getComputedStyle(this.TD);
 
     this.TEXTAREA.style.fontSize = cellComputedStyle.fontSize;
     this.TEXTAREA.style.fontFamily = cellComputedStyle.fontFamily;
     this.TEXTAREA.style.backgroundColor = this.TD.style.backgroundColor;
 
-    const textareaComputedStyle = getComputedStyle(this.TEXTAREA);
-
-    const horizontalPadding = parseInt(textareaComputedStyle.paddingLeft, 10) +
-      parseInt(textareaComputedStyle.paddingRight, 10);
-    const verticalPadding = parseInt(textareaComputedStyle.paddingTop, 10) +
-      parseInt(textareaComputedStyle.paddingBottom, 10);
-
-    const finalWidth = width - horizontalPadding;
-    const finalHeight = height - verticalPadding;
-    const finalMaxWidth = maxWidth - horizontalPadding;
-    const finalMaxHeight = maxHeight - verticalPadding;
-
     this.autoResize.init(this.TEXTAREA, {
-      minWidth: Math.min(finalWidth, finalMaxWidth),
-      minHeight: Math.min(finalHeight, finalMaxHeight),
+      minWidth: Math.min(width, maxWidth),
+      minHeight: Math.min(height, maxHeight),
       // TEXTAREA should never be wider than visible part of the viewport (should not cover the scrollbar)
-      maxWidth: finalMaxWidth,
-      maxHeight: finalMaxHeight,
+      maxWidth,
+      maxHeight,
     }, true);
   }
 
@@ -387,9 +366,6 @@ export class TextEditor extends BaseEditor {
    * @private
    */
   bindEvents() {
-    this.eventManager.addEventListener(this.TEXTAREA, 'cut', event => event.stopPropagation());
-    this.eventManager.addEventListener(this.TEXTAREA, 'paste', event => event.stopPropagation());
-
     if (isIOS()) {
       // on iOS after click "Done" the edit isn't hidden by default, so we need to handle it manually.
       this.eventManager.addEventListener(this.TEXTAREA, 'focusout', () => this.finishEditing(false));
@@ -400,12 +376,18 @@ export class TextEditor extends BaseEditor {
 
     this.addHook('afterColumnResize', () => {
       this.refreshDimensions();
-      this.focus();
+
+      if (this.state === EDITOR_STATE.EDITING) {
+        this.focus();
+      }
     });
 
     this.addHook('afterRowResize', () => {
       this.refreshDimensions();
-      this.focus();
+
+      if (this.state === EDITOR_STATE.EDITING) {
+        this.focus();
+      }
     });
   }
 
@@ -444,28 +426,6 @@ export class TextEditor extends BaseEditor {
     };
 
     editorContext.addShortcuts([{
-      keys: [['Tab']],
-      // TODO: Duplicated part of code (callback to shortcut).
-      callback: (event) => {
-        const tableMeta = this.hot.getSettings();
-        const tabMoves = typeof tableMeta.tabMoves === 'function'
-          ? tableMeta.tabMoves(event)
-          : tableMeta.tabMoves;
-
-        this.hot.selection.transformStart(tabMoves.row, tabMoves.col, true);
-      },
-    }, {
-      keys: [['Shift', 'Tab']],
-      // TODO: Duplicated part of code (callback to shortcut).
-      callback: (event) => {
-        const tableMeta = this.hot.getSettings();
-        const tabMoves = typeof tableMeta.tabMoves === 'function'
-          ? tableMeta.tabMoves(event)
-          : tableMeta.tabMoves;
-
-        this.hot.selection.transformStart(-tabMoves.row, -tabMoves.col);
-      },
-    }, {
       keys: [['Control', 'Enter']],
       callback: () => {
         insertNewLine();
@@ -475,8 +435,6 @@ export class TextEditor extends BaseEditor {
       runOnlyIf: event => !this.hot.selection.isMultiple() && // We trigger a data population for multiple selection.
         // catch CTRL but not right ALT (which in some systems triggers ALT+CTRL)
         !event.altKey,
-      relativeToGroup: EDITOR_MANAGER_GROUP,
-      position: 'before',
     }, {
       keys: [['Meta', 'Enter']],
       callback: () => {
@@ -485,8 +443,6 @@ export class TextEditor extends BaseEditor {
         return false; // Will block closing editor.
       },
       runOnlyIf: () => !this.hot.selection.isMultiple(), // We trigger a data population for multiple selection.
-      relativeToGroup: EDITOR_MANAGER_GROUP,
-      position: 'before',
     }, {
       keys: [['Alt', 'Enter']],
       callback: () => {
@@ -494,24 +450,6 @@ export class TextEditor extends BaseEditor {
 
         return false; // Will block closing editor.
       },
-      relativeToGroup: EDITOR_MANAGER_GROUP,
-      position: 'before',
-    }, {
-      // TODO: Duplicated part of code (callback to shortcut)
-      keys: [
-        ['PageUp'],
-      ],
-      callback: () => {
-        this.hot.selection.transformStart(-this.hot.countVisibleRows(), 0);
-      },
-    }, {
-      // TODO: Duplicated part of code (callback to shortcut)
-      keys: [
-        ['PageDown'],
-      ],
-      callback: () => {
-        this.hot.selection.transformStart(this.hot.countVisibleRows(), 0);
-      }
     }, {
       keys: [['Home']],
       callback: (event, [keyName]) => {
@@ -521,22 +459,6 @@ export class TextEditor extends BaseEditor {
       keys: [['End']],
       callback: (event, [keyName]) => {
         updateCaretPosition(keyName, this.TEXTAREA);
-      },
-    }, {
-      keys: [['Control/Meta', 'Z']],
-      preventDefault: false,
-      callback: () => {
-        this.hot._registerTimeout(() => {
-          this.autoResize.resize();
-        }, 10);
-      },
-    }, {
-      keys: [['Control/Meta', 'Shift', 'Z']],
-      preventDefault: false,
-      callback: () => {
-        this.hot._registerTimeout(() => {
-          this.autoResize.resize();
-        }, 10);
       },
     }], contextConfig);
   }
@@ -550,22 +472,6 @@ export class TextEditor extends BaseEditor {
     const shortcutManager = this.hot.getShortcutManager();
     const editorContext = shortcutManager.getContext('editor');
 
-    editorContext.removeShortcutsByGroup(SHORTCUTS_GROUP_NAVIGATION);
     editorContext.removeShortcutsByGroup(SHORTCUTS_GROUP);
-    editorContext.removeShortcutsByGroup(SHORTCUTS_GROUP_EDITOR);
-  }
-
-  /**
-   * OnAfterDocumentKeyDown callback.
-   *
-   * @private
-   * @param {KeyboardEvent} event The keyboard event object.
-   */
-  onAfterDocumentKeyDown(event) {
-    const arrowKeyCodes = [KEY_CODES.ARROW_UP, KEY_CODES.ARROW_RIGHT, KEY_CODES.ARROW_DOWN, KEY_CODES.ARROW_LEFT];
-
-    if (arrowKeyCodes.indexOf(event.keyCode) === -1) {
-      this.autoResize.resize(String.fromCharCode(event.keyCode));
-    }
   }
 }

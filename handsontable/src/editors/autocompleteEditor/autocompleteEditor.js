@@ -9,14 +9,30 @@ import {
   offset,
   outerHeight,
   outerWidth,
+  setAttribute,
   setCaretPosition,
 } from '../../helpers/dom/element';
 import { isDefined, stringify } from '../../helpers/mixed';
 import { stripTags } from '../../helpers/string';
 import { KEY_CODES, isPrintableChar } from '../../helpers/unicode';
 import { textRenderer } from '../../renderers/textRenderer';
-
-const privatePool = new WeakMap();
+import {
+  A11Y_ACTIVEDESCENDANT,
+  A11Y_AUTOCOMPLETE,
+  A11Y_COMBOBOX,
+  A11Y_CONTROLS,
+  A11Y_EXPANDED,
+  A11Y_HASPOPUP,
+  A11Y_LISTBOX,
+  A11Y_LIVE,
+  A11Y_OPTION,
+  A11Y_POSINSET,
+  A11Y_PRESENTATION,
+  A11Y_RELEVANT,
+  A11Y_SELECTED,
+  A11Y_SETSIZE,
+  A11Y_TEXT
+} from '../../helpers/a11y';
 
 export const EDITOR_TYPE = 'autocomplete';
 
@@ -29,32 +45,30 @@ export class AutocompleteEditor extends HandsontableEditor {
     return EDITOR_TYPE;
   }
 
-  constructor(instance) {
-    super(instance);
-    /**
-     * Query string to turn available values over.
-     *
-     * @type {string}
-     */
-    this.query = null;
-    /**
-     * Contains stripped choices.
-     *
-     * @type {string[]}
-     */
-    this.strippedChoices = [];
-    /**
-     * Contains raw choices.
-     *
-     * @type {Array}
-     */
-    this.rawChoices = [];
-
-    privatePool.set(this, {
-      skipOne: false,
-      isMacOS: this.hot.rootWindow.navigator.platform.indexOf('Mac') > -1,
-    });
-  }
+  /**
+   * Query string to turn available values over.
+   *
+   * @type {string}
+   */
+  query = null;
+  /**
+   * Contains stripped choices.
+   *
+   * @type {string[]}
+   */
+  strippedChoices = [];
+  /**
+   * Contains raw choices.
+   *
+   * @type {Array}
+   */
+  rawChoices = [];
+  /**
+   * Holds the prefix of the editor's id.
+   *
+   * @type {string}
+   */
+  #idPrefix = this.hot.guid.slice(0, 9);
 
   /**
    * Gets current value from editable element.
@@ -83,33 +97,60 @@ export class AutocompleteEditor extends HandsontableEditor {
 
     addClass(this.htContainer, 'autocompleteEditor');
     addClass(this.htContainer, this.hot.rootWindow.navigator.platform.indexOf('Mac') === -1 ? '' : 'htMacScroll');
+
+    if (this.hot.getSettings().ariaTags) {
+      setAttribute(this.TEXTAREA, [
+        A11Y_TEXT(),
+        A11Y_COMBOBOX(),
+        A11Y_HASPOPUP('listbox'),
+        A11Y_AUTOCOMPLETE(),
+      ]);
+    }
+  }
+
+  /**
+   * Prepares editor's metadata and configuration of the internal Handsontable's instance.
+   *
+   * @param {number} row The visual row index.
+   * @param {number} col The visual column index.
+   * @param {number|string} prop The column property (passed when datasource is an array of objects).
+   * @param {HTMLTableCellElement} td The rendered cell element.
+   * @param {*} value The rendered value.
+   * @param {object} cellProperties The cell meta object (see {@link Core#getCellMeta}).
+   */
+  prepare(row, col, prop, td, value, cellProperties) {
+    super.prepare(row, col, prop, td, value, cellProperties);
+
+    if (this.hot.getSettings().ariaTags) {
+      setAttribute(this.TEXTAREA, [
+        A11Y_EXPANDED('false'),
+        A11Y_CONTROLS(`${this.#idPrefix}-listbox-${row}-${col}`),
+      ]);
+    }
   }
 
   /**
    * Opens the editor and adjust its size and internal Handsontable's instance.
    */
   open() {
-    const priv = privatePool.get(this);
-
     super.open();
 
-    const trimDropdown = this.cellProperties.trimDropdown === void 0 ? true : this.cellProperties.trimDropdown;
+    const trimDropdown = this.cellProperties.trimDropdown === undefined ? true : this.cellProperties.trimDropdown;
+    const rootInstanceAriaTagsEnabled = this.hot.getSettings().ariaTags;
+    const sourceArray = Array.isArray(this.cellProperties.source) ? this.cellProperties.source : null;
+    const sourceSize = sourceArray?.length;
+    const { row: rowIndex, col: colIndex } = this;
 
     this.showEditableElement();
     this.focus();
-    let scrollbarWidth = getScrollbarWidth();
-
-    if (scrollbarWidth === 0 && priv.isMacOS) {
-      scrollbarWidth += 15; // default scroll bar width if scroll bars are visible only when scrolling
-    }
-
     this.addHook('beforeKeyDown', event => this.onBeforeKeyDown(event));
 
     this.htEditor.updateSettings({
-      colWidths: trimDropdown ? [outerWidth(this.TEXTAREA) - 2] : void 0,
-      width: trimDropdown ? outerWidth(this.TEXTAREA) + scrollbarWidth : void 0,
-      renderer: (instance, TD, row, col, prop, value, cellProperties) => {
-        textRenderer(instance, TD, row, col, prop, value, cellProperties);
+      colWidths: trimDropdown ? [outerWidth(this.TEXTAREA) - 2] : undefined,
+      autoColumnSize: true,
+      autoRowSize: true,
+      renderer: (hotInstance, TD, row, col, prop, value, cellProperties) => {
+        textRenderer(hotInstance, TD, row, col, prop, value, cellProperties);
 
         const { filteringCaseSensitive, allowHtml, locale } = this.cellProperties;
         const query = this.query;
@@ -127,13 +168,43 @@ export class AutocompleteEditor extends HandsontableEditor {
           }
         }
 
+        if (rootInstanceAriaTagsEnabled) {
+          setAttribute(TD, [
+            A11Y_OPTION(),
+            // Add `setsize` and `posinset` only if the source is an array.
+            ...(sourceArray ? [A11Y_SETSIZE(sourceSize)] : []),
+            ...(sourceArray ? [A11Y_POSINSET(sourceArray.indexOf(value) + 1)] : []),
+            ['id', `${this.htEditor.rootElement.id}_${row}-${col}`],
+          ]);
+        }
+
         TD.innerHTML = cellValue;
       },
-      autoColumnSize: true,
+      afterSelectionEnd: (startRow, startCol) => {
+        if (rootInstanceAriaTagsEnabled) {
+          const TD = this.htEditor.getCell(startRow, startCol, true);
+
+          setAttribute(TD, [
+            A11Y_SELECTED(),
+          ]);
+
+          setAttribute(this.TEXTAREA, ...A11Y_ACTIVEDESCENDANT(TD.id));
+        }
+      },
     });
 
-    if (priv.skipOne) {
-      priv.skipOne = false;
+    if (rootInstanceAriaTagsEnabled) {
+      // Add `role=presentation` to the main table to prevent the readers from treating the option list as a table.
+      setAttribute(this.htEditor.view._wt.wtOverlays.wtTable.TABLE, ...A11Y_PRESENTATION());
+
+      setAttribute(this.htEditor.rootElement, [
+        A11Y_LISTBOX(),
+        A11Y_LIVE('polite'),
+        A11Y_RELEVANT('text'),
+        ['id', `${this.#idPrefix}-listbox-${rowIndex}-${colIndex}`],
+      ]);
+
+      setAttribute(this.TEXTAREA, ...A11Y_EXPANDED('true'));
     }
 
     this.hot._registerTimeout(() => {
@@ -147,6 +218,12 @@ export class AutocompleteEditor extends HandsontableEditor {
   close() {
     this.removeHooksByKey('beforeKeyDown');
     super.close();
+
+    if (this.hot.getSettings().ariaTags) {
+      setAttribute(this.TEXTAREA, [
+        A11Y_EXPANDED('false'),
+      ]);
+    }
   }
 
   /**
@@ -212,9 +289,7 @@ export class AutocompleteEditor extends HandsontableEditor {
     const orderByRelevanceLength = Array.isArray(orderByRelevance) ? orderByRelevance.length : 0;
 
     if (filterSetting === false) {
-      if (orderByRelevanceLength) {
-        highlightIndex = orderByRelevance[0];
-      }
+      highlightIndex = orderByRelevanceLength > 0 ? orderByRelevance[0] : 0;
 
     } else {
       const sorted = [];
@@ -236,15 +311,17 @@ export class AutocompleteEditor extends HandsontableEditor {
 
     this.strippedChoices = choices;
 
-    this.htEditor.loadData(pivot([choices]));
-
     if (choices.length === 0) {
       this.htEditor.rootElement.style.display = 'none';
 
     } else {
       this.htEditor.rootElement.style.display = '';
+    }
 
-      this.updateDropdownHeight();
+    this.htEditor.loadData(pivot([choices]));
+
+    if (choices.length > 0) {
+      this.updateDropdownDimensions();
       this.flipDropdownIfNeeded();
 
       if (this.cellProperties.strict === true) {
@@ -254,7 +331,7 @@ export class AutocompleteEditor extends HandsontableEditor {
 
     this.hot.listen();
 
-    setCaretPosition(this.TEXTAREA, pos, (pos === endPos ? void 0 : endPos));
+    setCaretPosition(this.TEXTAREA, pos, (pos === endPos ? undefined : endPos));
   }
 
   /**
@@ -275,7 +352,7 @@ export class AutocompleteEditor extends HandsontableEditor {
 
     const textareaOffset = offset(this.TEXTAREA);
     const textareaHeight = outerHeight(this.TEXTAREA);
-    const dropdownHeight = this.getDropdownHeight();
+    const dropdownHeight = this.getHeight();
     const trimmingContainerScrollTop = trimmingContainer.scrollTop;
     const headersHeight = outerHeight(this.hot.view._wt.wtTable.THEAD);
     const containerOffset = offset(trimmingContainer);
@@ -309,7 +386,7 @@ export class AutocompleteEditor extends HandsontableEditor {
       let height = null;
 
       do {
-        lastRowHeight = this.htEditor.getRowHeight(i) || this.htEditor.view._wt.getSetting('defaultRowHeight');
+        lastRowHeight = this.htEditor.getRowHeight(i) || this.htEditor.view.getDefaultRowHeight();
         tempHeight += lastRowHeight;
         i += 1;
       } while (tempHeight < spaceAvailable);
@@ -317,7 +394,8 @@ export class AutocompleteEditor extends HandsontableEditor {
       height = tempHeight - lastRowHeight;
 
       if (this.htEditor.flipped) {
-        this.htEditor.rootElement.style.top = `${parseInt(this.htEditor.rootElement.style.top, 10) + dropdownHeight - height}px`; // eslint-disable-line max-len
+        this.htEditor.rootElement.style.top =
+        `${parseInt(this.htEditor.rootElement.style.top, 10) + dropdownHeight - height}px`;
       }
 
       this.setDropdownHeight(tempHeight - lastRowHeight);
@@ -350,7 +428,7 @@ export class AutocompleteEditor extends HandsontableEditor {
     dropdownStyle.position = 'absolute';
     dropdownStyle.top = '';
 
-    this.htEditor.flipped = void 0;
+    this.htEditor.flipped = undefined;
   }
 
   /**
@@ -358,14 +436,17 @@ export class AutocompleteEditor extends HandsontableEditor {
    *
    * @private
    */
-  updateDropdownHeight() {
-    const currentDropdownWidth = this.htEditor.getColWidth(0) + getScrollbarWidth(this.hot.rootDocument) + 2;
-    const trimDropdown = this.cellProperties.trimDropdown;
-
+  updateDropdownDimensions() {
     this.htEditor.updateSettings({
-      height: this.getDropdownHeight(),
-      width: trimDropdown ? void 0 : currentDropdownWidth
+      width: this.getWidth(),
+      height: this.getHeight(),
     });
+
+    if (this.htEditor.view.hasVerticalScroll()) {
+      this.htEditor.updateSettings({
+        width: this.htEditor.getSettings().width + getScrollbarWidth(this.hot.rootDocument),
+      });
+    }
 
     this.htEditor.view._wt.wtTable.alignOverlaysWithTrimmingContainer();
   }
@@ -390,7 +471,7 @@ export class AutocompleteEditor extends HandsontableEditor {
    */
   highlightBestMatchingChoice(index) {
     if (typeof index === 'number') {
-      this.htEditor.selectCell(index, 0, void 0, void 0, void 0, false);
+      this.htEditor.selectCell(index, 0, undefined, undefined, undefined, false);
     } else {
       this.htEditor.deselectCell();
     }
@@ -402,11 +483,29 @@ export class AutocompleteEditor extends HandsontableEditor {
    * @private
    * @returns {number}
    */
-  getDropdownHeight() {
-    const firstRowHeight = this.htEditor.getRowHeight(0) || 23;
-    const visibleRows = this.cellProperties.visibleRows;
+  getHeight() {
+    const containerStyle = this.hot.rootWindow.getComputedStyle(this.htContainer.querySelector('.htCore'));
+    const borderVerticalCompensation = parseInt(containerStyle.borderTopWidth, 10) +
+      parseInt(containerStyle.borderBottomWidth, 10);
+    const maxItems = Math.min(this.cellProperties.visibleRows, this.strippedChoices.length);
+    const height = Array.from({ length: maxItems }, (_, i) => i)
+      .reduce((h, index) => h + this.htEditor.getRowHeight(index), 0);
 
-    return this.strippedChoices.length >= visibleRows ? (visibleRows * firstRowHeight) : (this.strippedChoices.length * firstRowHeight) + 8; // eslint-disable-line max-len
+    return height + borderVerticalCompensation + 1;
+  }
+
+  /**
+   * Calculates and return the internal Handsontable's width.
+   *
+   * @private
+   * @returns {number}
+   */
+  getWidth() {
+    const containerStyle = this.hot.rootWindow.getComputedStyle(this.htContainer.querySelector('.htCore'));
+    const borderHorizontalCompensation = parseInt(containerStyle.borderInlineStartWidth, 10) +
+      parseInt(containerStyle.borderInlineEndWidth, 10);
+
+    return this.htEditor.getColWidth(0) + borderHorizontalCompensation;
   }
 
   /**
@@ -465,10 +564,6 @@ export class AutocompleteEditor extends HandsontableEditor {
    * @param {KeyboardEvent} event The keyboard event object.
    */
   onBeforeKeyDown(event) {
-    const priv = privatePool.get(this);
-
-    priv.skipOne = false;
-
     if (isPrintableChar(event.keyCode) || event.keyCode === KEY_CODES.BACKSPACE ||
       event.keyCode === KEY_CODES.DELETE || event.keyCode === KEY_CODES.INSERT) {
       // for Windows 10 + FF86 there is need to add delay to make sure that the value taken from
@@ -488,7 +583,6 @@ export class AutocompleteEditor extends HandsontableEditor {
       if (this.htEditor) {
         this.hot._registerTimeout(() => {
           this.queryChoices(this.TEXTAREA.value);
-          priv.skipOne = true;
         }, timeOffset);
       }
     }

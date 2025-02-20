@@ -1,8 +1,6 @@
 describe('HandsontableEditor', () => {
-  const id = 'testContainer';
-
   beforeEach(function() {
-    this.$container = $(`<div id="${id}"></div>`).appendTo('body');
+    this.$container = $('<div id="testContainer"></div>').appendTo('body');
   });
 
   afterEach(function() {
@@ -65,7 +63,7 @@ describe('HandsontableEditor', () => {
 
     const editor = $(getActiveEditor().TEXTAREA_PARENT);
 
-    keyDownUp('enter');
+    keyDownUp('F2');
 
     expect(editor.offset()).toEqual($(getCell(0, 0)).offset());
   });
@@ -526,6 +524,38 @@ describe('HandsontableEditor', () => {
     window.onerror = prevError;
   });
 
+  it('should not throw an error while closing editor that is not visible in the viewport', async() => {
+    const spy = jasmine.createSpyObj('error', ['test']);
+    const prevError = window.onerror;
+
+    window.onerror = function() {
+      spy.test();
+
+      return true;
+    };
+    handsontable({
+      data: createSpreadsheetData(100, 1),
+      width: 300,
+      height: 200,
+      columns: [{
+        type: 'handsontable',
+        handsontable: {
+          data: [['Marque'], ['Country'], ['Parent company']]
+        }
+      }],
+    });
+
+    selectCell(0, 0);
+    keyDownUp('enter');
+    scrollViewportTo({ row: 95 });
+
+    await sleep(100);
+
+    expect(spy.test.calls.count()).toBe(0);
+
+    window.onerror = prevError;
+  });
+
   it('Enter pressed in nested HT should set the value and hide the editor', () => {
     handsontable({
       columns: [
@@ -727,7 +757,7 @@ describe('HandsontableEditor', () => {
   });
 
   describe('IME support', () => {
-    it('should focus editable element after selecting the cell', async() => {
+    it('should focus editable element after a timeout when selecting the cell if `imeFastEdit` is enabled', async() => {
       handsontable({
         columns: [
           {
@@ -737,11 +767,14 @@ describe('HandsontableEditor', () => {
               data: getManufacturerData()
             }
           }
-        ]
+        ],
+        imeFastEdit: true,
       });
+
       selectCell(0, 0, 0, 0, true, false);
 
-      await sleep(10);
+      // The `imeFastEdit` timeout is set to 50ms.
+      await sleep(55);
 
       expect(document.activeElement).toBe(getActiveEditor().TEXTAREA);
     });
@@ -796,5 +829,80 @@ describe('HandsontableEditor', () => {
     keyDownUp('arrowdown');
 
     expect(getSelected()).toEqual([[1, 2, 1, 2]]);
+  });
+
+  it('should open editor with the correct size', async() => {
+    handsontable({
+      colWidths: 120,
+      columns: [
+        {
+          type: 'handsontable',
+          handsontable: {
+            colHeaders: ['Marque', 'Country', 'Parent company'],
+            data: getManufacturerData(),
+            autoColumnSize: true,
+          }
+        }
+      ]
+    });
+
+    selectCell(0, 0);
+    keyDownUp('enter');
+
+    await sleep(100);
+
+    const container = getActiveEditor().htContainer;
+
+    expect(container.clientWidth).forThemes(({ classic, main }) => {
+      classic.toBe(290);
+      main.toBe(360);
+    });
+    expect(container.clientHeight).forThemes(({ classic, main }) => {
+      classic.toBe(168);
+      main.toBe(212);
+    });
+  });
+
+  it('should open editor with the correct size after other handsontable editor was open beforehand (#dev-2112)', async() => {
+    handsontable({
+      columns: [
+        {
+          type: 'handsontable',
+          handsontable: {
+            colHeaders: ['Marque', 'Country', 'Parent company'],
+            data: getManufacturerData(),
+            autoColumnSize: true,
+          }
+        },
+        {
+          type: 'handsontable',
+          handsontable: {
+            data: [['Red'], ['Green'], ['Blue']],
+          }
+        }
+      ]
+    });
+
+    selectCell(0, 1);
+    keyDownUp('enter');
+    keyDownUp('escape');
+
+    await sleep(100);
+
+    selectCell(0, 0);
+    keyDownUp('enter');
+
+    await sleep(100);
+
+    const container = getActiveEditor().htContainer;
+
+    expect(container.clientWidth).forThemes(({ classic, main }) => {
+      classic.toBe(290);
+      main.toBe(360);
+    });
+    expect(container.clientHeight).forThemes(({ classic, main }) => {
+      classic.toBe(168);
+      main.toBe(212);
+    });
   });
 });

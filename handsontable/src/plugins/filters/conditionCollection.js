@@ -1,4 +1,3 @@
-import { arrayEach, arrayMap, arrayReduce } from '../../helpers/array';
 import { mixin } from '../../helpers/object';
 import { toSingleLine } from '../../helpers/templateLiteralTag';
 import localHooks from '../../mixins/localHooks';
@@ -15,27 +14,37 @@ const MAP_NAME = 'ConditionCollection.filteringStates';
  * @class ConditionCollection
  */
 class ConditionCollection {
+  /**
+   * Handsontable instance.
+   *
+   * @type {Core}
+   */
+  hot;
+  /**
+   * Indicates whether the internal IndexMap should be registered or not. Generally,
+   * registered Maps responds to the index changes. Within that collection, sometimes
+   * this is not necessary.
+   *
+   * @type {boolean}
+   */
+  isMapRegistrable;
+  /**
+   * Index map storing filtering states for every column. ConditionCollection write and read to/from element.
+   *
+   * @type {LinkedPhysicalIndexToValueMap}
+   */
+  filteringStates = new IndexToValueMap();
+  /**
+   * Stores the previous state of the condition stack before the latest filter operation.
+   * This is used in the `beforeFilter` plugin to allow performing the undo operation.
+   *
+   * @type {null|Array}
+   */
+  previousConditionStack = null;
+
   constructor(hot, isMapRegistrable = true) {
-    /**
-     * Handsontable instance.
-     *
-     * @type {Core}
-     */
     this.hot = hot;
-    /**
-     * Indicates whether the internal IndexMap should be registered or not. Generally,
-     * registered Maps responds to the index changes. Within that collection, sometimes
-     * this is not necessary.
-     *
-     * @type {boolean}
-     */
     this.isMapRegistrable = isMapRegistrable;
-    /**
-     * Index map storing filtering states for every column. ConditionCollection write and read to/from this element.
-     *
-     * @type {LinkedPhysicalIndexToValueMap}
-     */
-    this.filteringStates = new IndexToValueMap();
 
     if (this.isMapRegistrable === true) {
       this.hot.columnIndexMapper.registerMap(MAP_NAME, this.filteringStates);
@@ -100,9 +109,16 @@ class ConditionCollection {
    */
   addCondition(column, conditionDefinition, operation = OPERATION_AND, position) {
     const localeForColumn = this.hot.getCellMeta(0, column).locale;
-    const args = arrayMap(conditionDefinition.args,
-      v => (typeof v === 'string' ? v.toLocaleLowerCase(localeForColumn) : v));
+    const args = conditionDefinition.args
+      .map(v => (typeof v === 'string' ? v.toLocaleLowerCase(localeForColumn) : v));
     const name = conditionDefinition.name || conditionDefinition.command.key;
+
+    // If there's no previous condition stack defined (which means the condition stack was not cleared after the
+    // previous filter operation or that there was no filter operation performed yet), store the current conditions as
+    // the previous condition stack.
+    if (this.previousConditionStack === null) {
+      this.setPreviousConditionStack(this.exportAllConditions());
+    }
 
     this.runLocalHooks('beforeAdd', column);
 
@@ -191,15 +207,16 @@ class ConditionCollection {
    * @returns {Array}
    */
   exportAllConditions() {
-    return arrayReduce(this.filteringStates.getEntries(), (allConditions, [column, { operation, conditions }]) => {
-      allConditions.push({
-        column,
-        operation,
-        conditions: arrayMap(conditions, ({ name, args }) => ({ name, args })),
-      });
+    return this.filteringStates.getEntries()
+      .reduce((allConditions, [column, { operation, conditions }]) => {
+        allConditions.push({
+          column,
+          operation,
+          conditions: conditions.map(({ name, args }) => ({ name, args: [...args] })),
+        });
 
-      return allConditions;
-    }, []);
+        return allConditions;
+      }, []);
   }
 
   /**
@@ -210,8 +227,8 @@ class ConditionCollection {
   importAllConditions(conditions) {
     this.clean();
 
-    arrayEach(conditions, (stack) => {
-      arrayEach(stack.conditions, condition => this.addCondition(stack.column, condition));
+    conditions.forEach((stack) => {
+      stack.conditions.forEach(condition => this.addCondition(stack.column, condition));
     });
   }
 
@@ -223,6 +240,9 @@ class ConditionCollection {
    * @fires ConditionCollection#afterRemove
    */
   removeConditions(column) {
+    // Store the current conditions as the previous condition stack before it's cleared.
+    this.setPreviousConditionStack(this.exportAllConditions());
+
     this.runLocalHooks('beforeRemove', column);
     this.filteringStates.clearValue(column);
     this.runLocalHooks('afterRemove', column);
@@ -256,6 +276,16 @@ class ConditionCollection {
     }
 
     return conditions.length > 0;
+  }
+
+  /**
+   * Updates the `previousConditionStack` property with the provided stack.
+   * It is used to store the current conditions before they are modified, allowing for undo operations.
+   *
+   * @param {Array|null} previousConditionStack The stack of previous conditions.
+   */
+  setPreviousConditionStack(previousConditionStack) {
+    this.previousConditionStack = previousConditionStack;
   }
 
   /**

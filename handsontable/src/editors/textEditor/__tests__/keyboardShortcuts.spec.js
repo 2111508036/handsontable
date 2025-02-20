@@ -57,7 +57,7 @@ describe('TextEditor keyboard shortcut', () => {
   });
 
   describe('"Enter + Alt"', () => {
-    it('should exceed the editor height only for one line', () => {
+    it.forTheme('classic')('should exceed the editor height only for one line', () => {
       const hot = handsontable({
         data: [
           ['Maserati', 'Mazda'],
@@ -76,10 +76,37 @@ describe('TextEditor keyboard shortcut', () => {
 
       expect(editorTextareaHeight).toBe(2 * editorTextareaLineHeight);
     });
+
+    it.forTheme('main')('should exceed the editor height only for one line', () => {
+      const hot = handsontable({
+        data: [
+          ['Maserati', 'Mazda'],
+          ['Honda', 'Mini']
+        ]
+      });
+
+      selectCell(0, 0);
+      keyDownUp('enter');
+      keyDownUp(['alt', 'enter']);
+
+      const editorTextarea = hot.getActiveEditor().TEXTAREA;
+      const editorComputedStyle = getComputedStyle(editorTextarea);
+      const editorTextareaLineHeight = parseInt(editorComputedStyle.lineHeight, 10);
+      const editorTextareaTopPadding = parseInt(editorComputedStyle.paddingTop, 10);
+      const editorTextareaBottomPadding = parseInt(editorComputedStyle.paddingBottom, 10);
+      const editorTextareaHeight = parseInt(editorComputedStyle.height, 10);
+
+      expect(editorTextareaHeight).toBe(
+        (2 * editorTextareaLineHeight)
+        + editorTextareaTopPadding
+        + editorTextareaBottomPadding
+        - 1 // Subtracted by the `autoResize` plugin, not sure why.
+      );
+    });
   });
 
   describe('"Enter + Control"', () => {
-    it('should exceed the editor height only for one line', () => {
+    it.forTheme('classic')('should exceed the editor height only for one line', () => {
       const hot = handsontable({
         data: [
           ['Maserati', 'Mazda'],
@@ -98,10 +125,37 @@ describe('TextEditor keyboard shortcut', () => {
 
       expect(editorTextareaHeight).toBe(2 * editorTextareaLineHeight);
     });
+
+    it.forTheme('main')('should exceed the editor height only for one line', () => {
+      const hot = handsontable({
+        data: [
+          ['Maserati', 'Mazda'],
+          ['Honda', 'Mini']
+        ]
+      });
+
+      selectCell(0, 0);
+      keyDownUp('enter');
+      keyDownUp(['control', 'enter']);
+
+      const editorTextarea = hot.getActiveEditor().TEXTAREA;
+      const editorComputedStyle = getComputedStyle(editorTextarea);
+      const editorTextareaLineHeight = parseInt(editorComputedStyle.lineHeight, 10);
+      const editorTextareaPaddingTop = parseInt(editorComputedStyle.paddingTop, 10);
+      const editorTextareaPaddingBottom = parseInt(editorComputedStyle.paddingBottom, 10);
+      const editorTextareaHeight = parseInt(editorComputedStyle.height, 10);
+
+      expect(editorTextareaHeight).toBe(
+        (2 * editorTextareaLineHeight)
+        + editorTextareaPaddingTop
+        + editorTextareaPaddingBottom
+        - 1 // Subtracted by the `autoResize` plugin, not sure why.
+      );
+    });
   });
 
   describe('"Enter + Command"', () => {
-    it('should exceed the editor height only for one line', () => {
+    it.forTheme('classic')('should exceed the editor height only for one line', () => {
       const hot = handsontable({
         data: [
           ['Maserati', 'Mazda'],
@@ -119,6 +173,33 @@ describe('TextEditor keyboard shortcut', () => {
       const editorTextareaHeight = parseInt(editorComputedStyle.height, 10);
 
       expect(editorTextareaHeight).toBe(2 * editorTextareaLineHeight);
+    });
+
+    it.forTheme('main')('should exceed the editor height only for one line', () => {
+      const hot = handsontable({
+        data: [
+          ['Maserati', 'Mazda'],
+          ['Honda', 'Mini']
+        ]
+      });
+
+      selectCell(0, 0);
+      keyDownUp('enter');
+      keyDownUp(['meta', 'enter']);
+
+      const editorTextarea = hot.getActiveEditor().TEXTAREA;
+      const editorComputedStyle = getComputedStyle(editorTextarea);
+      const editorTextareaLineHeight = parseInt(editorComputedStyle.lineHeight, 10);
+      const editorTextareaPaddingTop = parseInt(editorComputedStyle.paddingTop, 10);
+      const editorTextareaPaddingBottom = parseInt(editorComputedStyle.paddingBottom, 10);
+      const editorTextareaHeight = parseInt(editorComputedStyle.height, 10);
+
+      expect(editorTextareaHeight).toBe(
+        (2 * editorTextareaLineHeight)
+        + editorTextareaPaddingTop
+        + editorTextareaPaddingBottom
+        - 1 // Subtracted by the `autoResize` plugin, not sure why.
+      );
     });
   });
 
@@ -215,158 +296,14 @@ describe('TextEditor keyboard shortcut', () => {
   });
 
   describe('"Z + Cmd/Ctrl"', () => {
-    it('should undo the last change in editor', () => {
-      handsontable({
-        data: [['Ferrari']],
-      });
-
-      selectCell(0, 0);
-      keyDownUp('enter');
-
-      document.execCommand('insertText', false, 'F1');
-      document.execCommand('undo', false);
-
-      expect(getActiveEditor().getValue()).toBe('Ferrari');
-    });
-
-    it('should update editor\'s height after undo the last change', async() => {
-      handsontable({
-        data: [['Ferrari']],
-      });
-
-      selectCell(0, 0);
-      keyDownUp('enter');
-
-      keyDownUp(['control/meta', 'enter']);
-      keyDownUp(['control/meta', 'enter']);
-      keyDownUp(['control/meta', 'enter']);
-
-      expect($(getActiveEditor().TEXTAREA).height()).toBe(84);
-
-      document.execCommand('undo', false);
-      keyDownUp(['control/meta', 'z']);
-
-      await sleep(50);
-
-      expect($(getActiveEditor().TEXTAREA).height()).toBe(63);
-    });
-
-    // potentially unstable test
-    it('should undo the last change in editor for multiline text', () => {
-      handsontable({
-        data: [['Ferrari']],
-      });
-
-      selectCell(0, 0);
-      keyDownUp('enter');
-
-      keyDownUp(['control/meta', 'enter']);
-      document.execCommand('insertText', false, 'F1');
-      keyDownUp(['control/meta', 'enter']);
-      keyDownUp(['control/meta', 'enter']);
-      document.execCommand('undo', false);
-
-      // the native undo works differently on Safari do happy test
-      if (Handsontable.helper.isSafari()) {
-        expect(true).toBe(true);
-
-      } else {
-        expect(getActiveEditor().getValue()).toBe('Ferrari\nF1\n');
-
-        document.execCommand('undo', false);
-
-        expect(getActiveEditor().getValue()).toBe('Ferrari\nF1');
-
-        document.execCommand('undo', false);
-
-        expect(getActiveEditor().getValue()).toBe('Ferrari\n');
-
-        document.execCommand('undo', false);
-
-        expect(getActiveEditor().getValue()).toBe('Ferrari');
-      }
-    });
+    // Moved tests to the visual ones
+    // https://github.com/handsontable/handsontable/blob/develop/visual-tests/tests/editors/textEditor/undo.spec.ts
+    // https://github.com/handsontable/handsontable/blob/develop/visual-tests/tests/editors/textEditor/undo-multiline-text.spec.ts
   });
 
   describe('"Z + Shift + Cmd/Ctrl"', () => {
-    it('should redo the last change in editor', () => {
-      handsontable({
-        data: [['Ferrari']],
-      });
-
-      selectCell(0, 0);
-      keyDownUp('enter');
-
-      document.execCommand('insertText', false, 'F1');
-      document.execCommand('undo', false);
-      document.execCommand('redo', false);
-
-      expect(getActiveEditor().getValue()).toBe('FerrariF1');
-    });
-
-    it('should update editor\'s height after redo the last change', async() => {
-      handsontable({
-        data: [['Ferrari']],
-      });
-
-      selectCell(0, 0);
-      keyDownUp('enter');
-
-      keyDownUp(['control/meta', 'enter']);
-      keyDownUp(['control/meta', 'enter']);
-      keyDownUp(['control/meta', 'enter']);
-
-      document.execCommand('undo', false);
-
-      await sleep(50);
-
-      expect($(getActiveEditor().TEXTAREA).height()).toBe(63);
-
-      await sleep(50);
-
-      document.execCommand('redo', false);
-      keyDownUp(['control/meta', 'shift', 'z']);
-
-      expect($(getActiveEditor().TEXTAREA).height()).toBe(84);
-    });
-
-    // potentially unstable test
-    it('should undo the last change in editor for multiline text', () => {
-      handsontable({
-        data: [['Ferrari']],
-      });
-
-      selectCell(0, 0);
-      keyDownUp('enter');
-
-      keyDownUp(['control/meta', 'enter']);
-      document.execCommand('insertText', false, 'F1');
-      keyDownUp(['control/meta', 'enter']);
-      keyDownUp(['control/meta', 'enter']);
-      document.execCommand('undo', false);
-      document.execCommand('undo', false);
-      document.execCommand('undo', false);
-      document.execCommand('undo', false);
-
-      expect(getActiveEditor().getValue()).toBe('Ferrari');
-
-      document.execCommand('redo', false);
-
-      // the native redo works differently on Safari do happy test
-      if (Handsontable.helper.isSafari()) {
-        expect(true).toBe(true);
-
-      } else {
-        expect(getActiveEditor().getValue()).toBe('Ferrari\n');
-
-        document.execCommand('redo', false);
-
-        expect(getActiveEditor().getValue()).toBe('Ferrari\nF1');
-
-        document.execCommand('redo', false);
-
-        expect(getActiveEditor().getValue()).toBe('Ferrari\nF1\n');
-      }
-    });
+    // Moved tests to the visual ones
+    // https://github.com/handsontable/handsontable/blob/develop/visual-tests/tests/editors/textEditor/redo.spec.ts
+    // https://github.com/handsontable/handsontable/blob/develop/visual-tests/tests/editors/textEditor/redo-multiline-text.spec.ts
   });
 });

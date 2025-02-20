@@ -1,4 +1,4 @@
-import ViewSize from './viewSize';
+import { ViewSize } from './viewSize';
 import { WORKING_SPACE_ALL, WORKING_SPACE_TOP, WORKING_SPACE_BOTTOM } from './constants';
 
 /**
@@ -17,28 +17,26 @@ import { WORKING_SPACE_ALL, WORKING_SPACE_TOP, WORKING_SPACE_BOTTOM } from './co
  *
  * @class {ViewSizeSet}
  */
-export default class ViewSizeSet {
-  constructor() {
-    /**
-     * Holder for current and next view size and offset.
-     *
-     * @type {ViewSize}
-     */
-    this.size = new ViewSize();
-    /**
-     * Defines if this instance shares its size with another instance. If it's in the shared
-     * mode it defines what space it occupies ('top' or 'bottom').
-     *
-     * @type {number}
-     */
-    this.workingSpace = WORKING_SPACE_ALL;
-    /**
-     * Shared Size instance.
-     *
-     * @type {ViewSize}
-     */
-    this.sharedSize = null;
-  }
+export class ViewSizeSet {
+  /**
+   * Holder for current and next view size and offset.
+   *
+   * @type {ViewSize}
+   */
+  size = new ViewSize();
+  /**
+   * Defines if this instance shares its size with another instance. If it's in the shared
+   * mode it defines what space it occupies ('top' or 'bottom').
+   *
+   * @type {number}
+   */
+  workingSpace = WORKING_SPACE_ALL;
+  /**
+   * Shared Size instance.
+   *
+   * @type {ViewSize}
+   */
+  sharedSize = null;
 
   /**
    * Sets the size for rendered elements. It can be a size for rows, cells or size for row
@@ -75,7 +73,7 @@ export default class ViewSizeSet {
    * @returns {boolean}
    */
   isShared() {
-    return this.sharedSize instanceof ViewSize;
+    return this.sharedSize !== null;
   }
 
   /**

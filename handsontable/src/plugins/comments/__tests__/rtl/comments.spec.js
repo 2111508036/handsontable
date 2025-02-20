@@ -52,7 +52,7 @@ describe('Comments (RTL mode)', () => {
         });
 
         const plugin = getPlugin('comments');
-        const $editor = $(plugin.editor.getInputElement());
+        const $editor = $(plugin.getEditorInputElement());
 
         plugin.showAtCell(0, 1);
 
@@ -61,7 +61,10 @@ describe('Comments (RTL mode)', () => {
         const editorWidth = $editor.outerWidth();
 
         expect(editorOffset.top).toBeCloseTo(cellOffset.top, 0);
-        expect(editorOffset.left).toBeCloseTo(cellOffset.left - editorWidth, 0);
+        expect(editorOffset.left).forThemes(({ classic, main }) => {
+          classic.toBeCloseTo(cellOffset.left - editorWidth, 0);
+          main.toBeCloseTo(cellOffset.left - editorWidth - 1, 0); // border compensation?
+        });
       });
 
       it('should display the comment editor on the left of the cell when the viewport is scrolled (the Window object is a scrollable element)', async() => {
@@ -77,10 +80,15 @@ describe('Comments (RTL mode)', () => {
           comments: true,
         });
 
-        scrollViewportTo(countRows() - 1, countCols() - 1);
+        scrollViewportTo({
+          row: countRows() - 1,
+          col: countCols() - 1,
+          verticalSnap: 'top',
+          horizontalSnap: 'start',
+        });
 
         const plugin = getPlugin('comments');
-        const $editor = $(plugin.editor.getInputElement());
+        const $editor = $(plugin.getEditorInputElement());
 
         await sleep(10);
 
@@ -91,7 +99,10 @@ describe('Comments (RTL mode)', () => {
         const editorWidth = $editor.outerWidth();
 
         expect(editorOffset.top).toBeCloseTo(cellOffset.top, 0);
-        expect(editorOffset.left).toBeCloseTo(cellOffset.left - editorWidth, 0);
+        expect(editorOffset.left).forThemes(({ classic, main }) => {
+          classic.toBeCloseTo(cellOffset.left - editorWidth, 0);
+          main.toBeCloseTo(cellOffset.left - editorWidth - 1, 0); // border compensation?
+        });
       });
 
       it('should display the comment editor on the left of the cell when the viewport is not scrolled (the Window object is not a scrollable element)', () => {
@@ -104,7 +115,7 @@ describe('Comments (RTL mode)', () => {
         });
 
         const plugin = getPlugin('comments');
-        const $editor = $(plugin.editor.getInputElement());
+        const $editor = $(plugin.getEditorInputElement());
 
         plugin.showAtCell(0, 1);
 
@@ -113,7 +124,10 @@ describe('Comments (RTL mode)', () => {
         const editorWidth = $editor.outerWidth();
 
         expect(editorOffset.top).toBeCloseTo(cellOffset.top, 0);
-        expect(editorOffset.left).toBeCloseTo(cellOffset.left - editorWidth, 0);
+        expect(editorOffset.left).forThemes(({ classic, main }) => {
+          classic.toBeCloseTo(cellOffset.left - editorWidth, 0);
+          main.toBeCloseTo(cellOffset.left - editorWidth - 1, 0); // border compensation?
+        });
       });
 
       it('should display the comment editor on the left of the cell when the viewport is scrolled (the Window object is not a scrollable element)', async() => {
@@ -125,10 +139,15 @@ describe('Comments (RTL mode)', () => {
           height: 200,
         });
 
-        scrollViewportTo(countRows() - 1, countCols() - 1);
+        scrollViewportTo({
+          row: countRows() - 1,
+          col: countCols() - 1,
+          verticalSnap: 'top',
+          horizontalSnap: 'start',
+        });
 
         const plugin = getPlugin('comments');
-        const $editor = $(plugin.editor.getInputElement());
+        const $editor = $(plugin.getEditorInputElement());
 
         await sleep(10);
 
@@ -139,7 +158,10 @@ describe('Comments (RTL mode)', () => {
         const editorWidth = $editor.outerWidth();
 
         expect(editorOffset.top).toBeCloseTo(cellOffset.top, 0);
-        expect(editorOffset.left).toBeCloseTo(cellOffset.left - editorWidth, 0);
+        expect(editorOffset.left).forThemes(({ classic, main }) => {
+          classic.toBeCloseTo(cellOffset.left - editorWidth, 0);
+          main.toBeCloseTo(cellOffset.left - editorWidth - 1, 0); // border compensation?
+        });
       });
 
       it('should display the comment editor on the right of the cell when there is not enough space of the left', async() => {
@@ -155,10 +177,15 @@ describe('Comments (RTL mode)', () => {
           comments: true,
         });
 
-        scrollViewportTo(countRows() - 1, countCols() - 1);
+        scrollViewportTo({
+          row: countRows() - 1,
+          col: countCols() - 1,
+          verticalSnap: 'top',
+          horizontalSnap: 'start',
+        });
 
         const plugin = getPlugin('comments');
-        const $editor = $(plugin.editor.getInputElement());
+        const $editor = $(plugin.getEditorInputElement());
 
         await sleep(10);
 
@@ -168,7 +195,10 @@ describe('Comments (RTL mode)', () => {
         const editorOffset = $editor.offset();
 
         expect(editorOffset.top).toBeCloseTo(cellOffset.top, 0);
-        expect(editorOffset.left).toBeCloseTo(cellOffset.left + 1, 0);
+        expect(editorOffset.left).forThemes(({ classic, main }) => {
+          classic.toBeCloseTo(cellOffset.left + 1, 0);
+          main.toBeCloseTo(cellOffset.left, 0); // border compensation?
+        });
       });
 
       it('should display the comment editor on the top-right of the cell when there is not enough space of the' +
@@ -185,10 +215,15 @@ describe('Comments (RTL mode)', () => {
           comments: true,
         });
 
-        scrollViewportTo(countRows() - 1, countCols() - 1);
+        scrollViewportTo({
+          row: countRows() - 1,
+          col: countCols() - 1,
+          verticalSnap: 'top',
+          horizontalSnap: 'start',
+        });
 
         const plugin = getPlugin('comments');
-        const $editor = $(plugin.editor.getInputElement());
+        const $editor = $(plugin.getEditorInputElement());
 
         await sleep(10);
 
@@ -202,7 +237,10 @@ describe('Comments (RTL mode)', () => {
         const editorHeight = $editor.outerHeight();
 
         expect(editorOffset.top).toBeCloseTo(cellOffset.top - editorHeight + cellHeight - 1, 0);
-        expect(editorOffset.left).toBeCloseTo(cellOffset.left + cellWidth + 1, 0);
+        expect(editorOffset.left).forThemes(({ classic, main }) => {
+          classic.toBeCloseTo(cellOffset.left + cellWidth + 1, 0);
+          main.toBeCloseTo(cellOffset.left + cellWidth, 0); // border compensation?
+        });
       });
 
       it('should display the comment editor on the top-left of the cell when on the bottom there is no left space', async() => {
@@ -218,10 +256,15 @@ describe('Comments (RTL mode)', () => {
           comments: true,
         });
 
-        scrollViewportTo(countRows() - 1, 0);
+        scrollViewportTo({
+          row: countRows() - 1,
+          col: 0,
+          verticalSnap: 'top',
+          horizontalSnap: 'start',
+        });
 
         const plugin = getPlugin('comments');
-        const $editor = $(plugin.editor.getInputElement());
+        const $editor = $(plugin.getEditorInputElement());
 
         await sleep(10);
 
@@ -235,7 +278,10 @@ describe('Comments (RTL mode)', () => {
         const editorWidth = $editor.outerWidth();
 
         expect(editorOffset.top).toBeCloseTo(cellOffset.top - editorHeight + cellHeight - 1, 0);
-        expect(editorOffset.left).toBeCloseTo(cellOffset.left - editorWidth, 0);
+        expect(editorOffset.left).forThemes(({ classic, main }) => {
+          classic.toBeCloseTo(cellOffset.left - editorWidth, 0);
+          main.toBeCloseTo(cellOffset.left - editorWidth - 1, 0); // border compensation?
+        });
       });
     });
 
@@ -277,14 +323,20 @@ describe('Comments (RTL mode)', () => {
 
         await sleep(10);
 
-        const commentEditor = $(hot.getPlugin('comments').editor.getInputElement());
+        const commentEditor = $(hot.getPlugin('comments').getEditorInputElement());
         const commentEditorOffset = commentEditor.offset();
         const commentEditorWidth = commentEditor.outerWidth();
 
         expect({
           top: commentEditorOffset.top,
           left: commentEditorOffset.left + commentEditorWidth,
-        }).toEqual(cell.offset());
+        }).forThemes(({ classic, main }) => {
+          classic.toEqual(cell.offset());
+          main.toEqual({
+            top: cell.offset().top,
+            left: cell.offset().left - 1, // border compensation?
+          });
+        });
 
         hot.destroy();
       });
